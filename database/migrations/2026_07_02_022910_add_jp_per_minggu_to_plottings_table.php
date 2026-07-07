@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::table('plottings', function (Blueprint $table) {
             // Menambahkan kolom jp_per_minggu. 
             // Default 0 agar data lama tidak error saat di-migrate.
-            $table->integer('jp_per_minggu')->default(0)->after('kelas_id');
+            $table->integer('jp_per_minggu')->default(0)->after('mapel_id');
         });
     }
 
