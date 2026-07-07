@@ -18,7 +18,7 @@ return new class extends Migration
 
         // 2. Modifikasi Tabel ATP
         Schema::table('atp', function (Blueprint $table) {
-            $table->dropForeign(['kelas_id']);
+            // $table->dropForeign(['kelas_id']);
             $table->renameColumn('kelas_id', 'plotting_id');
             // 💡 Sesuai log error Anda, tabel targetnya bernama 'plottings'
             $table->foreign('plotting_id')->references('id')->on('plottings')->cascadeOnDelete();
