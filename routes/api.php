@@ -39,7 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // 3. GURU ROUTES (Nanti kita isi saat membuat fitur khusus guru)
     Route::middleware(['role_api:guru'])->group(function () {
         // Sesuaikan nama method di controller Anda (index atau myPlotting)
-        Route::get('/guru/plotting', [PlottingController::class, 'index']);
+        // Route::get('/guru/plotting', [PlottingController::class, 'index']);
+        Route::get('/guru/plotting', [PlottingController::class, 'myPlotting']);
         Route::get('/guru/capaian-pembelajaran', [CapaianPembelajaranController::class, 'getStructureForGuru']);
         Route::get('/guru/atp', [AtpGuruController::class, 'getAtp']);
         Route::post('/guru/atp', [AtpGuruController::class, 'saveAtp']);
