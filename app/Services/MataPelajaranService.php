@@ -6,7 +6,7 @@ use App\Models\MataPelajaran;
 
 class MataPelajaranService
 {
-    public function ambilPaginasiDanCari($search, $perPage = 10)
+    public function ambilPaginasiDanCari($search, $perPage = 20)
     {
         $query = MataPelajaran::query();
 
