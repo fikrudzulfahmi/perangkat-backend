@@ -40,7 +40,10 @@ class CapaianPembelajaranService
     {
         // 🟢 PERBAIKAN: Ubah 'mata_pelajaran_id' menjadi 'mapel_id' 
         // (Atau sesuaikan dengan nama kolom relasi mapel yang benar di tabel capaian_pembelajarans Anda)
-        return \App\Models\CapaianPembelajaran::with(['listTp']) // Pastikan nama relasinya listTp (sesuai dengan yang ada di show() controller)
+        return \App\Models\CapaianPembelajaran::with(['listTp' => function ($query) {
+            // Mengurutkan data relasi listTp berdasarkan kolom kode_tp dari kecil ke besar (asc)
+            $query->orderBy('kode_tp', 'asc');
+        }]) // Pastikan nama relasinya listTp (sesuai dengan yang ada di show() controller)
             ->where('mapel_id', $mapelId)
             ->get();
     }
