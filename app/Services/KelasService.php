@@ -6,7 +6,7 @@ use App\Models\Kelas;
 
 class KelasService
 {
-    public function ambilPaginasiDanCari($search, $perPage = 10)
+    public function ambilPaginasiDanCari($search, $perPage = 15)
     {
         $query = Kelas::query();
 
