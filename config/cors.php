@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://perangkat.ingintau.my.id',],
+    'allowed_origins' => ['https://perangkat.ingintau.my.id', 'http://localhost:5173',],
 
     'allowed_origins_patterns' => [],
 
