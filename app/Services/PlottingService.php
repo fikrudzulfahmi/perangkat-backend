@@ -8,7 +8,7 @@ use Illuminate\Support\Arr; // Tambahkan ini jika ingin pakai Arr::except (opsio
 
 class PlottingService
 {
-    public function ambilPaginasi($perPage = 10, $tahunPelajaranId = null, $search = null)
+    public function ambilPaginasi($perPage = 30, $tahunPelajaranId = null, $search = null)
     {
         $query = Plotting::with(['tahunPelajaran', 'guru', 'mapel', 'listKelas'])
             ->whereHas('tahunPelajaran', function ($q) {
