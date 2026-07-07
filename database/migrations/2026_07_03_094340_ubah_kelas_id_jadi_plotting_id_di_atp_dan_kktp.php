@@ -26,7 +26,7 @@ return new class extends Migration
 
         // 3. Modifikasi Tabel KKTP
         Schema::table('kktps', function (Blueprint $table) {
-            $table->dropForeign(['kelas_id']);
+            // $table->dropForeign(['kelas_id']);
             $table->renameColumn('kelas_id', 'plotting_id');
             $table->foreign('plotting_id')->references('id')->on('plottings')->cascadeOnDelete();
         });
