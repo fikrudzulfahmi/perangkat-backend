@@ -139,4 +139,27 @@ class BankSoalController extends Controller
             'message' => "$jumlahBerhasil soal berhasil disalin ke bank soal aktif!"
         ]);
     }
+
+    public function referensiPlotting(Request $request)
+    {
+        $tahunId = $request->query('tahun_pelajaran_id');
+        $guruId = auth()->user()->guru_id; // Sesuaikan cara memanggil guru_id Anda
+
+        // 1. Ambil ID mata pelajaran apa saja yang diajarkan oleh guru ini
+        $mapelSaya = \App\Models\Plotting::where('guru_id', $guruId)
+            ->pluck('mapel_id')
+            ->unique();
+
+        // 2. Cari plotting di tahun tersebut dengan mapel yang SAMA, beserta data Gurunya
+        $referensi = \App\Models\Plotting::with(['guru', 'list_kelas'])
+            ->where('tahun_pelajaran_id', $tahunId)
+            ->whereIn('mapel_id', $mapelSaya)
+            // ->where('guru_id', '!=', $guruId) // Hapus tanda // di depan jika TIDAK MAU melihat soal diri sendiri di tahun lalu (khusus guru lain saja)
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $referensi
+        ]);
+    }
 }
