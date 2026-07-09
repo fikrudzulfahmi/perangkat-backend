@@ -58,7 +58,7 @@ class ProsemGuruController extends Controller
         }
 
         // Mencari guru lain yang mengajar mapel yang sama pada tahun ajaran yang dipilih
-        $referensi = \App\Models\Plotting::with(['guru']) // list_kelas otomatis termuat jika merupakan Accessor ($appends)
+        $referensi = \App\Models\Plotting::with(['guru', 'listKelas']) // list_kelas otomatis termuat jika merupakan Accessor ($appends)
             ->where('mapel_id', $plottingKita->mapel_id)
             ->where('tahun_pelajaran_id', $tahunPelajaranId)
             ->where('id', '!=', $plottingIdKita)
