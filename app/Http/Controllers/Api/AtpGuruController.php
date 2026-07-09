@@ -57,7 +57,7 @@ class AtpGuruController extends Controller
 
         // Cari plotting milik orang lain dengan mapel_id yang sama
         // CATATAN: Pastikan relasi 'guru' dan 'kelas' sesuai dengan nama di Model Plotting Anda
-        $referensi = \App\Models\Plotting::with(['guru', 'list_kelas'])
+        $referensi = \App\Models\Plotting::with(['guru', 'listKelas'])
             ->where('mapel_id', $plottingKita->mapel_id)
             ->where('tahun_pelajaran_id', $tahunPelajaranId)
             ->where('id', '!=', $plottingIdKita)
