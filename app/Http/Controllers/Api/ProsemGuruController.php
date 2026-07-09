@@ -46,4 +46,40 @@ class ProsemGuruController extends Controller
             ], 500);
         }
     }
+    public function referensiTeman(Request $request)
+    {
+        $plottingIdKita = $request->query('plotting_id');
+        $tahunPelajaranId = $request->query('tahun_pelajaran_id');
+
+        $plottingKita = \App\Models\Plotting::find($plottingIdKita);
+        if (!$plottingKita) {
+            return response()->json(['status' => 'success', 'data' => []]);
+        }
+
+        // Mencari guru lain yang mengajar mapel yang sama pada tahun ajaran yang dipilih
+        $referensi = \App\Models\Plotting::with(['guru']) // list_kelas otomatis termuat jika merupakan Accessor ($appends)
+            ->where('mapel_id', $plottingKita->mapel_id)
+            ->where('tahun_pelajaran_id', $tahunPelajaranId)
+            ->where('id', '!=', $plottingIdKita)
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $referensi
+        ]);
+    }
+
+    public function ambilProsemTeman(Request $request)
+    {
+        $plottingIdTeman = $request->query('plotting_id_teman');
+
+        // Mengambil seluruh baris distribusi JP milik rekan guru berdasarkan plotting_id mereka
+        // *Silakan sesuaikan nama Model Prosem Anda jika berbeda (misal: ProgramSemester atau Prosem)*
+        $prosemTeman = \App\Models\Prosem::where('plotting_id', $plottingIdTeman)->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $prosemTeman
+        ]);
+    }
 }

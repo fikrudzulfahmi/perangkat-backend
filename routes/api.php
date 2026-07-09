@@ -82,6 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/guru/tahun-ajaran', [TahunPelajaranController::class, 'allUntukGuru']);
         Route::get('/guru/atp/referensi-teman', [AtpGuruController::class, 'referensiTeman']);
         Route::get('/guru/atp/ambil-teman', [AtpGuruController::class, 'ambilAtpTeman']);
+        Route::get('/guru/prosem/referensi-teman', [ProsemGuruController::class, 'referensiTeman']);
+        Route::get('/guru/prosem/ambil-teman', [ProsemGuruController::class, 'ambilProsemTeman']);
     });
 
     // 2. ADMIN ROUTES (Hanya bisa diakses oleh role 'admin')
