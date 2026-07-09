@@ -142,19 +142,22 @@ class BankSoalController extends Controller
 
     public function referensiPlotting(Request $request)
     {
-        $tahunId = $request->query('tahun_pelajaran_id');
-        $guruId = auth()->user()->guru_id; // Sesuaikan cara memanggil guru_id Anda
+        $plottingIdKita = $request->query('plotting_id');
+        $tahunPelajaranId = $request->query('tahun_pelajaran_id');
 
-        // 1. Ambil ID mata pelajaran apa saja yang diajarkan oleh guru ini
-        $mapelSaya = \App\Models\Plotting::where('guru_id', $guruId)
-            ->pluck('mapel_id')
-            ->unique();
+        // Cari tahu mapel_id dari plotting kita saat ini
+        $plottingKita = \App\Models\Plotting::find($plottingIdKita);
 
-        // 2. Cari plotting di tahun tersebut dengan mapel yang SAMA, beserta data Gurunya
+        if (!$plottingKita) {
+            return response()->json(['status' => 'success', 'data' => []]);
+        }
+
+        // Cari plotting milik orang lain dengan mapel_id yang sama
+        // CATATAN: Pastikan relasi 'guru' dan 'kelas' sesuai dengan nama di Model Plotting Anda
         $referensi = \App\Models\Plotting::with(['guru', 'listKelas'])
-            ->where('tahun_pelajaran_id', $tahunId)
-            ->whereIn('mapel_id', $mapelSaya)
-            ->where('guru_id', '!=', $guruId) // Hapus tanda // di depan jika TIDAK MAU melihat soal diri sendiri di tahun lalu (khusus guru lain saja)
+            ->where('mapel_id', $plottingKita->mapel_id)
+            ->where('tahun_pelajaran_id', $tahunPelajaranId)
+            ->where('id', '!=', $plottingIdKita)
             ->get();
 
         return response()->json([
