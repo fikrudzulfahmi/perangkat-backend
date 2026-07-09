@@ -63,4 +63,18 @@ class BukuPeganganController extends Controller
             return response()->json(['message' => $e->getMessage()], 403);
         }
     }
+    public function referensiGlobal()
+    {
+        // Mengambil data unik berdasarkan judul buku agar tidak banyak duplikat
+        // Sesuaikan nama Model BukuPegangan Anda jika berbeda
+        $referensi = \App\Models\BukuPegangan::select('judul_buku', 'jenis_buku', 'penulis', 'penerbit', 'tahun_terbit')
+            ->distinct()
+            ->orderBy('judul_buku', 'asc')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $referensi
+        ]);
+    }
 }
