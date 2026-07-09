@@ -46,6 +46,7 @@ class AtpGuruController extends Controller
     public function referensiTeman(Request $request)
     {
         $plottingIdKita = $request->query('plotting_id');
+        $tahunPelajaranId = $request->query('tahun_pelajaran_id');
 
         // Cari tahu mapel_id dari plotting kita saat ini
         $plottingKita = \App\Models\Plotting::find($plottingIdKita);
@@ -56,9 +57,10 @@ class AtpGuruController extends Controller
 
         // Cari plotting milik orang lain dengan mapel_id yang sama
         // CATATAN: Pastikan relasi 'guru' dan 'kelas' sesuai dengan nama di Model Plotting Anda
-        $referensi = \App\Models\Plotting::with(['guru', 'kelas'])
+        $referensi = \App\Models\Plotting::with(['guru', 'list_kelas'])
             ->where('mapel_id', $plottingKita->mapel_id)
-            ->where('id', '!=', $plottingIdKita) // Jangan tampilkan diri sendiri
+            ->where('tahun_pelajaran_id', $tahunPelajaranId)
+            ->where('id', '!=', $plottingIdKita)
             ->get();
 
         return response()->json([
