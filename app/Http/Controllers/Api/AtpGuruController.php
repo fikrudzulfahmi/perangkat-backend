@@ -42,4 +42,41 @@ class AtpGuruController extends Controller
             'message' => 'Seluruh struktur ATP berhasil disimpan!'
         ]);
     }
+
+    public function referensiTeman(Request $request)
+    {
+        $plottingIdKita = $request->query('plotting_id');
+
+        // Cari tahu mapel_id dari plotting kita saat ini
+        $plottingKita = \App\Models\Plotting::find($plottingIdKita);
+
+        if (!$plottingKita) {
+            return response()->json(['status' => 'success', 'data' => []]);
+        }
+
+        // Cari plotting milik orang lain dengan mapel_id yang sama
+        // CATATAN: Pastikan relasi 'guru' dan 'kelas' sesuai dengan nama di Model Plotting Anda
+        $referensi = \App\Models\Plotting::with(['guru', 'kelas'])
+            ->where('mapel_id', $plottingKita->mapel_id)
+            ->where('id', '!=', $plottingIdKita) // Jangan tampilkan diri sendiri
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $referensi
+        ]);
+    }
+
+    public function ambilAtpTeman(Request $request)
+    {
+        $plottingIdTeman = $request->query('plotting_id_teman');
+
+        // Ambil susunan ATP berdasarkan plotting teman yang dipilih
+        $atpTeman = \App\Models\Atp::where('plotting_id', $plottingIdTeman)->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $atpTeman
+        ]);
+    }
 }

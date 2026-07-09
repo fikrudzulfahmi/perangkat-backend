@@ -80,6 +80,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Cari rute ini dan ubah bagian 'index' menjadi 'allUntukGuru'
         Route::get('/guru/tahun-ajaran', [TahunPelajaranController::class, 'allUntukGuru']);
+        Route::get('/guru/atp/referensi-teman', [AtpGuruController::class, 'referensiTeman']);
+        Route::get('/guru/atp/ambil-teman', [AtpGuruController::class, 'ambilAtpTeman']);
     });
 
     // 2. ADMIN ROUTES (Hanya bisa diakses oleh role 'admin')
