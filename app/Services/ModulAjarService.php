@@ -21,7 +21,7 @@ class ModulAjarService
 
     public function getReferensiClone($mapelId, $tahunAjaranId)
     {
-        return ModulAjar::with(['tujuanPembelajarans', 'kegiatanPembelajaran'])
+        return ModulAjar::with(['tujuanPembelajarans'])
             ->whereHas('plotting', function ($query) use ($mapelId, $tahunAjaranId) {
                 $query->where('mapel_id', $mapelId)
                     ->where('tahun_pelajaran_id', $tahunAjaranId);
