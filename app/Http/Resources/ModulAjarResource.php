@@ -24,11 +24,16 @@ class ModulAjarResource extends JsonResource
             'kegiatan_pembelajaran' => $this->kegiatan_pembelajaran,
             'lkpd' => $this->lkpd,
             'glosarium_pustaka' => $this->glosarium_pustaka,
+            // TAMBAHKAN 5 BARIS INI:
+            'asesmen_diagnostik' => $this->asesmen_diagnostik,
+            'asesmen_formatif'   => $this->asesmen_formatif,
+            'asesmen_sumatif'    => $this->asesmen_sumatif,
+            'remedial_content'   => $this->remedial_content,
+            'enrichment_content' => $this->enrichment_content,
             'created_at' => $this->created_at,
 
             // Relasi (Load jika dipanggil)
             'tujuan_pembelajarans' => $this->whenLoaded('tujuanPembelajarans'),
-            'bank_soals' => $this->whenLoaded('bankSoals'),
             'plotting' => $this->whenLoaded('plotting'),
         ];
     }

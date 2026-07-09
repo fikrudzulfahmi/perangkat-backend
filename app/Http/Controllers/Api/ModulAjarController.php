@@ -38,7 +38,7 @@ class ModulAjarController extends Controller
 
     public function show(ModulAjar $modulAjar)
     {
-        $modulAjar->load(['tujuanPembelajarans', 'bankSoals', 'plotting']);
+        $modulAjar->load(['tujuanPembelajarans', 'plotting']);
         return new ModulAjarResource($modulAjar);
     }
 

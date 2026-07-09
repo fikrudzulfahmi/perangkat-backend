@@ -31,14 +31,21 @@ class ModulAjar extends Model
         'kegiatan_pembelajaran',
         'lkpd',
         'glosarium_pustaka',
+        // TAMBAHKAN 5 BARIS INI:
+        'asesmen_diagnostik',
+        'asesmen_formatif',
+        'asesmen_sumatif',
+        'remedial_content',
+        'enrichment_content'
     ];
 
-    /**
-     * Otomatis konversi JSON dari/ke Array
-     */
     protected $casts = [
         'profil_pancasila'      => 'array',
         'kegiatan_pembelajaran' => 'array',
+        // TAMBAHKAN CASTING INI:
+        'asesmen_diagnostik'    => 'boolean',
+        'asesmen_formatif'      => 'boolean',
+        'asesmen_sumatif'       => 'boolean',
     ];
 
     /**

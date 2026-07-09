@@ -42,8 +42,11 @@ class ModulAjarRequest extends FormRequest
             'tujuan_pembelajaran_ids' => 'nullable|array',
             'tujuan_pembelajaran_ids.*' => 'uuid|exists:tujuan_pembelajarans,id',
 
-            'bank_soal_ids' => 'nullable|array',
-            'bank_soal_ids.*' => 'uuid|exists:bank_soals,id',
+            'asesmen_diagnostik' => 'nullable|boolean',
+            'asesmen_formatif'   => 'nullable|boolean',
+            'asesmen_sumatif'    => 'nullable|boolean',
+            'remedial_content'   => 'nullable|string',
+            'enrichment_content' => 'nullable|string',
         ];
     }
 }
