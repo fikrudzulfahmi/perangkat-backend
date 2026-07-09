@@ -26,6 +26,15 @@ class TahunPelajaranController extends Controller
         return TahunPelajaranResource::collection($data);
     }
 
+    public function allUntukGuru()
+    {
+        // Kita panggil fungsi 'ambilSemua' dari service (akan kita buat di langkah 3)
+        $data = $this->tahunService->ambilSemua();
+
+        // Tetap dibungkus menggunakan Resource yang sama agar format datanya seragam
+        return TahunPelajaranResource::collection($data);
+    }
+
     public function store(TahunPelajaranRequest $request)
     {
         $tahun = $this->tahunService->buatBaru($request->validated());

@@ -50,4 +50,10 @@ class TahunPelajaranService
             TahunPelajaran::where('is_active', true)->update(['is_active' => false]);
         }
     }
+
+    public function ambilSemua()
+    {
+        // Menggunakan get() untuk menarik semua data tanpa batasan halaman/paginasi
+        return TahunPelajaran::latest()->get();
+    }
 }
