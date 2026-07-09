@@ -142,20 +142,23 @@ class BankSoalController extends Controller
 
     public function referensiPlotting(Request $request)
     {
+        // Tangkap parameter yang dikirim dari frontend
+        $plottingIdKita = $request->query('plotting_id');
         $tahunPelajaranId = $request->query('tahun_pelajaran_id');
-        $guruId = auth()->user()->guru_id; // Sesuaikan jika cara panggil ID guru Anda berbeda
 
-        // 1. Cari tahu semua mapel_id yang diajarkan oleh guru kita saat ini
-        $mapelSaya = \App\Models\Plotting::where('guru_id', $guruId)
-            ->pluck('mapel_id')
-            ->unique();
+        // 1. Cari tahu mapel_id dari plotting kita (tujuan) saat ini
+        $plottingKita = \App\Models\Plotting::find($plottingIdKita);
 
-        // 2. Cari plotting milik ORANG LAIN dengan mapel_id yang sama pada tahun tersebut
-        // CATATAN: Memakai relasi 'guru' dan 'listKelas' persis seperti referensi Anda
+        if (!$plottingKita) {
+            return response()->json(['status' => 'success', 'data' => []]);
+        }
+
+        // 2. Cari plotting dengan mapel_id yang sama persis di tahun referensi tersebut
         $referensi = \App\Models\Plotting::with(['guru', 'listKelas'])
-            ->whereIn('mapel_id', $mapelSaya)
+            ->where('mapel_id', $plottingKita->mapel_id)
             ->where('tahun_pelajaran_id', $tahunPelajaranId)
-            ->where('guru_id', '!=', $guruId) // Mencegah plotting diri sendiri muncul
+            ->where('id', '!=', $plottingIdKita) // Jangan tampilkan plotting yang sedang kita pilih
+            // ->where('guru_id', '!=', auth()->user()->guru_id) // Hapus tanda // di depan jika TIDAK INGIN bisa mengkloning soal milik sendiri dari tahun lalu
             ->get();
 
         return response()->json([
