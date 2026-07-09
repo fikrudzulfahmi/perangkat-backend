@@ -85,6 +85,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/guru/prosem/referensi-teman', [ProsemGuruController::class, 'referensiTeman']);
         Route::get('/guru/prosem/ambil-teman', [ProsemGuruController::class, 'ambilProsemTeman']);
         Route::get('/guru/buku-pegangan/referensi-global', [BukuPeganganController::class, 'referensiGlobal']);
+        // Route untuk Kloning Bank Soal
+        Route::post('/guru/bank-soal/kloning', [BankSoalController::class, 'kloning']);
     });
 
     // 2. ADMIN ROUTES (Hanya bisa diakses oleh role 'admin')
