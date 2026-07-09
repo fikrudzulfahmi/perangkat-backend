@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/guru/dokumen-statis', [DokumenStatisController::class, 'index']);
         Route::get('/guru/kalender-efektif', [KalenderEfektifController::class, 'index']);
         Route::get('/guru/jadwal-mengajar', [JadwalMengajarController::class, 'index']);
+        Route::get('/guru/siswa', [SiswaController::class, 'index']);
     });
 
     // 2. ADMIN ROUTES (Hanya bisa diakses oleh role 'admin')
