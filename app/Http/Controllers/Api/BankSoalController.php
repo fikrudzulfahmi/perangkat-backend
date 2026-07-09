@@ -98,65 +98,45 @@ class BankSoalController extends Controller
 
         return Excel::download(new BankSoalTemplateExport($request->plotting_id), $namaFile);
     }
-    public function kloning(Request $request)
+    public function referensiSoal(Request $request)
     {
-        // 1. Validasi input
+        $plottingId = $request->query('plotting_id');
+
+        // Ambil soal berdasarkan plotting yang dipilih di masa lalu
+        $soal = \App\Models\BankSoal::where('plotting_id', $plottingId)->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $soal
+        ]);
+    }
+
+    public function kloningSelektif(Request $request)
+    {
         $request->validate([
-            'tahun_pelajaran_sumber_id' => 'required'
+            'soal_ids' => 'required|array',
+            'target_plotting_id' => 'required'
         ]);
 
-        $tpSumberId = $request->tahun_pelajaran_sumber_id;
-        $guruId = auth()->user()->guru_id; // Sesuaikan dengan relasi user-guru di aplikasi Anda
-
-        // Ambil TP Aktif (Misal dari helper, session, atau query tabel setting)
-        $tpAktifId = \App\Models\TahunPelajaran::where('is_active', true)->value('id');
-
-        if ($tpSumberId == $tpAktifId) {
-            return response()->json(['message' => 'Tahun pelajaran sumber tidak boleh sama dengan tahun pelajaran aktif.'], 400);
-        }
-
-        // 2. Ambil soal-soal milik guru ini di tahun pelajaran SUMBER
-        $soalSumber = \App\Models\BankSoal::whereHas('plotting', function ($query) use ($tpSumberId, $guruId) {
-            $query->where('tahun_pelajaran_id', $tpSumberId)
-                ->where('guru_id', $guruId);
-        })->get();
-
-        if ($soalSumber->isEmpty()) {
-            return response()->json(['message' => 'Tidak ada bank soal yang ditemukan pada tahun pelajaran tersebut.'], 404);
-        }
-
+        $soalIds = $request->soal_ids;
+        $targetPlottingId = $request->target_plotting_id;
         $jumlahBerhasil = 0;
 
-        // 3. Duplikasi Soal
-        foreach ($soalSumber as $soal) {
-            // Cari Plotting Aktif untuk guru dan mapel yang SAMA di TP saat ini
-            $plottingAktif = \App\Models\Plotting::where('guru_id', $guruId)
-                ->where('mapel_id', $soal->plotting->mapel_id)
-                ->where('tahun_pelajaran_id', $tpAktifId)
-                ->first();
+        // Ambil semua soal yang di-ceklis
+        $soals = \App\Models\BankSoal::whereIn('id', $soalIds)->get();
 
-            // Jika guru tersebut masih mengajar mapel yang sama di TP sekarang, baru di-kloning
-            if ($plottingAktif) {
-                $soalBaru = $soal->replicate(); // Fungsi bawaan Laravel untuk menduplikasi row
-                $soalBaru->plotting_id = $plottingAktif->id;
+        foreach ($soals as $soal) {
+            $soalBaru = $soal->replicate(); // Duplikasi row
+            $soalBaru->plotting_id = $targetPlottingId; // Arahkan ke tugas mengajar saat ini
+            $soalBaru->tp_id = null; // Reset relasi Tujuan Pembelajaran (karena TP tiap tahun bisa beda)
+            $soalBaru->save();
 
-                // Set tp_id menjadi null karena Tujuan Pembelajaran mungkin berbeda di TP baru
-                $soalBaru->tp_id = null;
-
-                $soalBaru->save();
-                $jumlahBerhasil++;
-            }
-        }
-
-        if ($jumlahBerhasil === 0) {
-            return response()->json([
-                'message' => 'Soal ditemukan, tetapi Anda tidak memiliki jadwal (plotting) untuk mapel tersebut di Tahun Pelajaran saat ini.'
-            ], 400);
+            $jumlahBerhasil++;
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => "Berhasil mengkloning $jumlahBerhasil soal ke tahun pelajaran aktif."
+            'message' => "$jumlahBerhasil soal berhasil disalin ke bank soal aktif!"
         ]);
     }
 }
