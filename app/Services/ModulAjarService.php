@@ -24,7 +24,7 @@ class ModulAjarService
         return ModulAjar::with(['tujuanPembelajarans', 'kegiatanPembelajaran'])
             ->whereHas('plotting', function ($query) use ($mapelId, $tahunAjaranId) {
                 $query->where('mapel_id', $mapelId)
-                    ->where('tahun_ajaran_id', $tahunAjaranId);
+                    ->where('tahun_pelajaran_id', $tahunAjaranId);
             })
             ->latest()
             ->get(); // Menggunakan get() tanpa paginasi agar muncul semua di dropdown modal
