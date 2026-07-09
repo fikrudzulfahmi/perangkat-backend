@@ -19,6 +19,17 @@ class ModulAjarService
         return $query->latest()->paginate($perPage);
     }
 
+    public function getReferensiClone($mapelId, $tahunAjaranId)
+    {
+        return ModulAjar::with(['tujuanPembelajarans', 'kegiatanPembelajaran'])
+            ->whereHas('plotting', function ($query) use ($mapelId, $tahunAjaranId) {
+                $query->where('mapel_id', $mapelId)
+                    ->where('tahun_ajaran_id', $tahunAjaranId);
+            })
+            ->latest()
+            ->get(); // Menggunakan get() tanpa paginasi agar muncul semua di dropdown modal
+    }
+
     public function store(array $data)
     {
         // Gunakan DB Transaction agar aman jika insert pivot gagal
