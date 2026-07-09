@@ -151,10 +151,10 @@ class BankSoalController extends Controller
             ->unique();
 
         // 2. Cari plotting di tahun tersebut dengan mapel yang SAMA, beserta data Gurunya
-        $referensi = \App\Models\Plotting::with(['guru', 'list_kelas'])
+        $referensi = \App\Models\Plotting::with(['guru', 'listKelas'])
             ->where('tahun_pelajaran_id', $tahunId)
             ->whereIn('mapel_id', $mapelSaya)
-            // ->where('guru_id', '!=', $guruId) // Hapus tanda // di depan jika TIDAK MAU melihat soal diri sendiri di tahun lalu (khusus guru lain saja)
+            ->where('guru_id', '!=', $guruId) // Hapus tanda // di depan jika TIDAK MAU melihat soal diri sendiri di tahun lalu (khusus guru lain saja)
             ->get();
 
         return response()->json([
