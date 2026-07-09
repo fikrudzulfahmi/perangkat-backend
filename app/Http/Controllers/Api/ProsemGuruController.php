@@ -8,6 +8,7 @@ use App\Http\Requests\SaveProsemRequest;
 use App\Http\Resources\ProsemStructureResource; // <-- Jangan lupa import ini
 use App\Services\ProsemService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ProsemGuruController extends Controller
 {
