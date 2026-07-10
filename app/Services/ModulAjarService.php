@@ -66,4 +66,13 @@ class ModulAjarService
             return $modulAjar->load(['tujuanPembelajarans']);
         });
     }
+    public function delete(ModulAjar $modulAjar)
+    {
+        return DB::transaction(function () use ($modulAjar) {
+            // Lepas relasi pivot dulu agar tidak menyisakan data orphan
+            $modulAjar->tujuanPembelajarans()->detach();
+
+            return $modulAjar->delete();
+        });
+    }
 }
