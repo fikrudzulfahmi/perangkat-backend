@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\BankSoalController;
 use App\Http\Controllers\Api\ModulAjarController;
 use App\Http\Controllers\Api\DokumenStatisController;
 use App\Http\Controllers\Api\JadwalMengajarController;
+use App\Http\Controllers\Api\AiAssistantController;
 
 // ==========================================
 // PUBLIC ROUTES (Tidak butuh login)
@@ -89,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/guru/bank-soal/referensi', [BankSoalController::class, 'referensiSoal']);
         Route::post('/guru/bank-soal/kloning-selektif', [BankSoalController::class, 'kloningSelektif']);
         Route::get('/guru/bank-soal/referensi-plotting', [BankSoalController::class, 'referensiPlotting']);
+        Route::post('/guru/ai/generate-modul', [AiAssistantController::class, 'generateModul']);
     });
 
     // 2. ADMIN ROUTES (Hanya bisa diakses oleh role 'admin')
