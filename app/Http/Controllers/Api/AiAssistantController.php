@@ -140,8 +140,13 @@ PROMPT;
 
             if ($response->failed()) {
                 Log::error('Gemini API error: ' . $response->body());
+
+                // Sementara ditampilkan apa adanya biar gampang di-debug.
+                // Kalau sudah beres, boleh dikembalikan ke pesan generik supaya
+                // detail teknis tidak terlihat oleh pengguna akhir.
+                $pesanGoogle = data_get($response->json(), 'error.message', $response->body());
                 return response()->json([
-                    'message' => 'Gagal menghubungi layanan AI. Coba lagi beberapa saat lagi.'
+                    'message' => 'Gagal menghubungi layanan AI: ' . $pesanGoogle
                 ], 502);
             }
 
