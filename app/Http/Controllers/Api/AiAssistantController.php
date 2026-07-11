@@ -46,31 +46,56 @@ class AiAssistantController extends Controller
             ->implode("\n");
 
 
+
         $promptText = <<<PROMPT
 Saya sedang membuat Modul Ajar SMK dengan pendekatan Pembelajaran Mendalam (Deep Learning) untuk materi: "{$request->bab_atau_materi}" (Jumlah Pertemuan: {$pertemuan}, Waktu per Pertemuan: {$waktu}).
  
 Tujuan Pembelajarannya adalah:
 {$stringTp}
  
-Modul ajar ini menerapkan pendekatan Pembelajaran Mendalam (Deep Learning) dari Kemendikdasmen, yang berpijak pada 3 prinsip utama:
-1. Mindful Learning (berkesadaran) - siswa sadar dan reflektif terhadap apa dan mengapa mereka belajar.
-2. Meaningful Learning (bermakna) - materi dikaitkan dengan pengalaman nyata/relevansi kehidupan siswa, khususnya konteks kejuruan/dunia kerja.
-3. Joyful Learning (menggembirakan) - proses belajar dibuat menyenangkan, memotivasi, dan melibatkan siswa secara aktif.
+Modul ajar ini menerapkan pendekatan Pembelajaran Mendalam (Deep Learning) dari Kemendikdasmen, yang berpijak pada 3 prinsip utama yang disingkat "BBM":
+1. Berkesadaran/Mindful (B) - siswa sadar dan reflektif terhadap apa dan mengapa mereka belajar.
+2. Bermakna/Meaningful (B) - materi dikaitkan dengan pengalaman nyata/relevansi kehidupan siswa, khususnya konteks kejuruan/dunia kerja.
+3. Menggembirakan/Joyful (M) - proses belajar dibuat menyenangkan, memotivasi, dan melibatkan siswa secara aktif.
  
-Tolong pastikan ketiga prinsip ini (mindful, meaningful, joyful) tercermin secara nyata pada pertanyaan pemantik, pemahaman bermakna, dan rangkaian kegiatan pembelajaran (bukan hanya disebut sebagai label, tapi diwujudkan dalam bentuk aktivitas konkret).
+Selain 3 prinsip di atas, Pembelajaran Mendalam juga memiliki kerangka Pengalaman Belajar yang terdiri dari 3 tahap berurutan ("3M"), yang WAJIB menjadi struktur inti dari kegiatan_inti:
+1. Memahami - peserta didik membangun kesadaran tujuan belajar dan mengonstruksi pemahaman awal terhadap konsep/materi dari berbagai sumber (selaras Taksonomi Bloom: mengingat & memahami; Taksonomi SOLO: unistruktural-multistruktural).
+2. Mengaplikasi - peserta didik menerapkan pengetahuan pada situasi nyata/kontekstual: memecahkan masalah, merancang solusi, praktik, atau membuat produk (selaras Bloom: menerapkan & menganalisis; SOLO: relasional).
+3. Merefleksi - peserta didik meninjau kembali proses dan hasil belajarnya, mengevaluasi pemahaman, dan menyadari perkembangan dirinya sebagai pembelajar (selaras Bloom: mengevaluasi; SOLO: abstrak-diperluas).
  
-Tolong buatkan isian untuk form Modul Ajar saya, dengan detail menerapkan prinsip-prinsip tersebut. Ikuti skema JSON yang sudah ditentukan. Untuk field berupa daftar/poin-poin, pisahkan tiap poin dengan karakter baris baru (bukan simbol bullet seperti - atau *, dan jangan pakai markdown seperti ** atau #).
+Tolong pastikan prinsip BBM (Berkesadaran, Bermakna, Menggembirakan) DAN tahapan 3M (Memahami-Mengaplikasi-Merefleksi) ini tercermin secara nyata dan konkret pada pertanyaan pemantik, pemahaman bermakna, dan seluruh rangkaian kegiatan pembelajaran (bukan hanya disebut sebagai label, tapi diwujudkan dalam bentuk aktivitas nyata, termasuk pemilihan model pembelajaran yang relevan seperti Discovery Learning, Inquiry Learning, Problem/Project Based Learning, atau praktik kerja langsung yang sesuai karakteristik SMK/vokasi).
  
-Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: buat SATU rangkaian kegiatan generik yang berlaku sama untuk SEMUA pertemuan (tidak perlu dipecah per pertemuan), karena pola pembukaan dan penutupan kelas umumnya konsisten setiap sesi.
+Tolong buatkan isian untuk form Modul Ajar saya dengan detail yang cukup kaya dan aplikatif (tidak sekadar poin generik), mengikuti skema JSON yang sudah ditentukan. Untuk field berupa daftar/poin-poin, pisahkan tiap poin dengan karakter baris baru (bukan simbol bullet seperti - atau *, dan jangan pakai markdown seperti ** atau #).
  
-Khusus untuk kegiatan_inti: WAJIB dipecah berdasarkan rentang pertemuan, karena materi/topik bisa berbeda di tiap pertemuan sesuai Tujuan Pembelajaran di atas. Kelompokkan Tujuan Pembelajaran ke dalam {$pertemuan} pertemuan secara proporsional dan logis (boleh 1 TP untuk beberapa pertemuan, atau beberapa TP digabung dalam 1 pertemuan, sesuai kompleksitas materi). Format tiap kelompok pertemuan diawali dengan judul singkat, contoh:
+Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: buat SATU rangkaian kegiatan generik yang berlaku sama untuk SEMUA pertemuan (tidak perlu dipecah per pertemuan), karena pola pembukaan dan penutupan kelas umumnya konsisten setiap sesi. Tetap detail dan konkret, bukan poin klise seperti "guru membuka pelajaran dengan salam".
  
-Pertemuan 1-2: [nama sub-materi]
-- (poin kegiatan detail dan deskripsinya + estimasi waktu)
-Pertemuan 3: [nama sub-materi lain]
-- (poin kegiatan detail dan deskripsinya + estimasi waktu)
+Khusus untuk kegiatan_inti, ikuti struktur berlapis berikut:
  
-Lanjutkan pola ini sampai seluruh {$pertemuan} pertemuan dan seluruh Tujuan Pembelajaran tercakup habis, tanpa ada TP yang terlewat.
+LAPIS 1 - Pembagian per pertemuan: Kelompokkan seluruh Tujuan Pembelajaran ke dalam {$pertemuan} pertemuan secara proporsional dan logis (boleh 1 TP untuk beberapa pertemuan, atau beberapa TP digabung dalam 1 pertemuan, sesuai kompleksitas materi), sampai seluruh {$pertemuan} pertemuan dan seluruh TP tercakup habis tanpa ada yang terlewat.
+ 
+LAPIS 2 - Di dalam tiap kelompok pertemuan, uraikan kegiatan mengikuti 3 tahap Memahami - Mengaplikasi - Merefleksi, masing-masing berisi beberapa poin kegiatan yang detail, konkret, dan sesuai konteks kejuruan/dunia kerja, lengkap dengan estimasi alokasi waktu tiap poin.
+ 
+Format keluaran kegiatan_inti mengikuti pola berikut (gunakan baris baru antar poin, tanpa bullet/markdown):
+ 
+Pertemuan 1-2: [nama sub-materi] (Model: [nama model pembelajaran yang dipakai])
+Tahap Memahami:
+(poin kegiatan 1 + estimasi waktu)
+(poin kegiatan 2 + estimasi waktu)
+Tahap Mengaplikasi:
+(poin kegiatan 1 + estimasi waktu)
+(poin kegiatan 2 + estimasi waktu)
+Tahap Merefleksi:
+(poin kegiatan 1 + estimasi waktu)
+ 
+Pertemuan 3: [nama sub-materi lain] (Model: [nama model pembelajaran yang dipakai])
+Tahap Memahami:
+...
+Tahap Mengaplikasi:
+...
+Tahap Merefleksi:
+...
+ 
+Lanjutkan pola ini untuk seluruh {$pertemuan} pertemuan. Pastikan total estimasi waktu tiap pertemuan proporsional dengan alokasi waktu {$waktu} yang tersedia per pertemuan.
 PROMPT;
 
         // Skema JSON supaya hasil dari Gemini terstruktur & langsung bisa
@@ -80,11 +105,11 @@ PROMPT;
             'properties' => [
                 'pertanyaan_pemantik' => [
                     'type' => 'STRING',
-                    'description' => '1-2 pertanyaan singkat pemancing nalar siswa, dirancang agar bersifat mindful (mendorong siswa sadar akan tujuan belajarnya) dan meaningful (terkait konteks nyata/dunia kerja SMK)',
+                    'description' => '1-2 pertanyaan singkat pemancing nalar siswa, dirancang agar bersifat Berkesadaran/mindful (mendorong siswa sadar akan tujuan belajarnya) dan Bermakna/meaningful (terkait konteks nyata/dunia kerja SMK), sebagai bagian dari prinsip BBM',
                 ],
                 'pemahaman_bermakna' => [
                     'type' => 'STRING',
-                    'description' => '1-5 kalimat singkat manfaat materi di dunia nyata/dunia kerja, mencerminkan prinsip meaningful learning',
+                    'description' => '1-5 kalimat singkat manfaat materi di dunia nyata/dunia kerja, mencerminkan prinsip Bermakna (bagian dari BBM)',
                 ],
                 'sarana_prasarana' => [
                     'type' => 'STRING',
@@ -92,7 +117,7 @@ PROMPT;
                 ],
                 'lkpd' => [
                     'type' => 'STRING',
-                    'description' => 'Ide singkat tugas praktek/teori untuk siswa, sedapat mungkin dikemas agar joyful (menarik, interaktif) dan meaningful (relevan dunia kerja)',
+                    'description' => 'Ide tugas praktek/teori untuk siswa yang cukup detail, dikemas agar Menggembirakan/joyful (menarik, interaktif) dan Bermakna/meaningful (relevan dunia kerja) sesuai prinsip BBM, idealnya terkait tahap Mengaplikasi pada kegiatan_inti',
                 ],
                 'glosarium_pustaka' => [
                     'type' => 'STRING',
@@ -100,15 +125,15 @@ PROMPT;
                 ],
                 'kegiatan_pendahuluan' => [
                     'type' => 'STRING',
-                    'description' => 'Poin-poin detail kegiatan Pendahuluan yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin. Sisipkan unsur mindful (misal refleksi singkat/menyampaikan tujuan) dan joyful (ice breaking/apersepsi menarik)',
+                    'description' => 'Poin-poin detail kegiatan Pendahuluan yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin. Sisipkan unsur Berkesadaran (misal refleksi singkat/menyampaikan tujuan) dan Menggembirakan (ice breaking/apersepsi menarik) sesuai prinsip BBM, hindari poin klise generik',
                 ],
                 'kegiatan_inti' => [
                     'type' => 'STRING',
-                    'description' => 'Kegiatan Inti WAJIB dikelompokkan per rentang pertemuan (misal "Pertemuan 1-2: [sub-materi]", lalu poin-poin di bawahnya, lanjut "Pertemuan 3: [sub-materi lain]", dst) sehingga seluruh Tujuan Pembelajaran terbagi habis ke seluruh jumlah pertemuan yang ada. Tiap poin kegiatan sangat detail, satu poin per baris, sertakan estimasi alokasi waktu, dan mencerminkan prinsip mindful, meaningful, joyful learning',
+                    'description' => 'Kegiatan Inti WAJIB dikelompokkan per rentang pertemuan (contoh "Pertemuan 1-2: [sub-materi] (Model: [nama model])"), dan di dalam tiap kelompok pertemuan WAJIB diuraikan dalam 3 sub-tahap Pengalaman Belajar Pembelajaran Mendalam: Tahap Memahami, Tahap Mengaplikasi, Tahap Merefleksi, masing-masing berisi beberapa poin kegiatan detail dengan estimasi alokasi waktu. Seluruh Tujuan Pembelajaran harus terbagi habis ke seluruh jumlah pertemuan yang ada, tanpa ada yang terlewat. Satu baris untuk tiap judul pertemuan/tahap/poin kegiatan (baris baru sebagai pemisah, tanpa bullet/markdown)',
                 ],
                 'kegiatan_penutup' => [
                     'type' => 'STRING',
-                    'description' => 'Poin-poin detail kegiatan Penutup yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin. Sisipkan unsur refleksi (mindful) dan penguatan motivasi (joyful)',
+                    'description' => 'Poin-poin detail kegiatan Penutup yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin. Sisipkan unsur refleksi (Berkesadaran) dan penguatan motivasi (Menggembirakan) sesuai prinsip BBM, hindari poin klise generik',
                 ],
                 'rekomendasi_asesmen' => [
                     'type' => 'ARRAY',
