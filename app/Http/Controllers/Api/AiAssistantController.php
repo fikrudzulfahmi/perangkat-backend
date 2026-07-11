@@ -47,6 +47,7 @@ class AiAssistantController extends Controller
 
 
 
+
         $promptText = <<<PROMPT
 Saya sedang membuat Modul Ajar SMK dengan pendekatan Pembelajaran Mendalam (Deep Learning) untuk materi: "{$request->bab_atau_materi}" (Jumlah Pertemuan: {$pertemuan}, Waktu per Pertemuan: {$waktu}).
  
@@ -73,21 +74,29 @@ Khusus untuk kegiatan_inti, ikuti struktur berlapis berikut:
  
 LAPIS 1 - Pembagian per pertemuan: Kelompokkan seluruh Tujuan Pembelajaran ke dalam {$pertemuan} pertemuan secara proporsional dan logis (boleh 1 TP untuk beberapa pertemuan, atau beberapa TP digabung dalam 1 pertemuan, sesuai kompleksitas materi), sampai seluruh {$pertemuan} pertemuan dan seluruh TP tercakup habis tanpa ada yang terlewat.
  
-LAPIS 2 - Di dalam tiap kelompok pertemuan, uraikan kegiatan mengikuti 3 tahap Memahami - Mengaplikasi - Merefleksi, masing-masing berisi beberapa poin kegiatan yang detail, konkret, dan sesuai konteks kejuruan/dunia kerja, lengkap dengan estimasi alokasi waktu tiap poin.
+LAPIS 2 - Di dalam tiap kelompok pertemuan, uraikan kegiatan mengikuti 3 tahap Memahami - Mengaplikasi - Merefleksi. Setiap poin kegiatan WAJIB memuat 4 unsur berikut dalam satu baris:
+a) Nama kegiatan singkat
+b) Deskripsi/elaborasi singkat 1 kalimat yang menjelaskan BAGAIMANA kegiatan itu dilaksanakan secara konkret (bukan cuma judul), sesuai konteks kejuruan/dunia kerja
+c) Label prinsip BBM yang paling menonjol pada poin tersebut, ditulis dalam kurung: (Berkesadaran) / (Bermakna) / (Menggembirakan) - usahakan ketiga label BBM tersebar merata di seluruh poin kegiatan_inti, tidak menumpuk hanya pada satu tahap saja
+d) Estimasi alokasi waktu
+ 
+Format tiap poin: [Nama kegiatan] - [deskripsi pelaksanaan] ([Label BBM]) - [estimasi waktu]
+ 
+Setiap judul kelompok pertemuan WAJIB mencantumkan kode/nomor Tujuan Pembelajaran (TP) yang dicakup, diambil persis dari daftar Tujuan Pembelajaran yang saya berikan di atas ({$stringTp}), dengan format: "Pertemuan X-Y [Kode TP: ...]: [nama sub-materi] (Model: [nama model pembelajaran])".
  
 Format keluaran kegiatan_inti mengikuti pola berikut (gunakan baris baru antar poin, tanpa bullet/markdown):
  
-Pertemuan 1-2: [nama sub-materi] (Model: [nama model pembelajaran yang dipakai])
+Pertemuan 1-2 [Kode TP: sebutkan kode TP terkait]: [nama sub-materi] (Model: [nama model pembelajaran yang dipakai])
 Tahap Memahami:
-(poin kegiatan 1 + estimasi waktu)
-(poin kegiatan 2 + estimasi waktu)
+[Nama kegiatan] - [deskripsi pelaksanaan] (Berkesadaran) - [estimasi waktu]
+[Nama kegiatan] - [deskripsi pelaksanaan] (Bermakna) - [estimasi waktu]
 Tahap Mengaplikasi:
-(poin kegiatan 1 + estimasi waktu)
-(poin kegiatan 2 + estimasi waktu)
+[Nama kegiatan] - [deskripsi pelaksanaan] (Menggembirakan) - [estimasi waktu]
+[Nama kegiatan] - [deskripsi pelaksanaan] (Bermakna) - [estimasi waktu]
 Tahap Merefleksi:
-(poin kegiatan 1 + estimasi waktu)
+[Nama kegiatan] - [deskripsi pelaksanaan] (Berkesadaran) - [estimasi waktu]
  
-Pertemuan 3: [nama sub-materi lain] (Model: [nama model pembelajaran yang dipakai])
+Pertemuan 3 [Kode TP: sebutkan kode TP terkait]: [nama sub-materi lain] (Model: [nama model pembelajaran yang dipakai])
 Tahap Memahami:
 ...
 Tahap Mengaplikasi:
@@ -129,7 +138,7 @@ PROMPT;
                 ],
                 'kegiatan_inti' => [
                     'type' => 'STRING',
-                    'description' => 'Kegiatan Inti WAJIB dikelompokkan per rentang pertemuan (contoh "Pertemuan 1-2: [sub-materi] (Model: [nama model])"), dan di dalam tiap kelompok pertemuan WAJIB diuraikan dalam 3 sub-tahap Pengalaman Belajar Pembelajaran Mendalam: Tahap Memahami, Tahap Mengaplikasi, Tahap Merefleksi, masing-masing berisi beberapa poin kegiatan detail dengan estimasi alokasi waktu. Seluruh Tujuan Pembelajaran harus terbagi habis ke seluruh jumlah pertemuan yang ada, tanpa ada yang terlewat. Satu baris untuk tiap judul pertemuan/tahap/poin kegiatan (baris baru sebagai pemisah, tanpa bullet/markdown)',
+                    'description' => 'Kegiatan Inti WAJIB dikelompokkan per rentang pertemuan, judul tiap kelompok WAJIB mencantumkan kode TP terkait, contoh: "Pertemuan 1-2 [Kode TP: ...]: [sub-materi] (Model: [nama model])". Di dalam tiap kelompok pertemuan WAJIB diuraikan dalam 3 sub-tahap 3M: Tahap Memahami, Tahap Mengaplikasi, Tahap Merefleksi. Setiap poin kegiatan WAJIB berformat "[nama kegiatan] - [deskripsi singkat cara pelaksanaan] ([label BBM: Berkesadaran/Bermakna/Menggembirakan]) - [estimasi waktu]", dengan label BBM tersebar merata di seluruh poin (bukan menumpuk di satu tahap). Seluruh Tujuan Pembelajaran harus terbagi habis ke seluruh jumlah pertemuan yang ada, tanpa ada yang terlewat. Satu baris untuk tiap judul pertemuan/tahap/poin kegiatan (baris baru sebagai pemisah, tanpa bullet/markdown)',
                 ],
                 'kegiatan_penutup' => [
                     'type' => 'STRING',
@@ -166,7 +175,6 @@ PROMPT;
                 'enrichment_content',
             ],
         ];
-
         try {
             $response = Http::timeout(60)->post(
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={$apiKey}",
