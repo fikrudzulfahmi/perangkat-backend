@@ -59,7 +59,7 @@ Modul ajar ini menerapkan pendekatan Pembelajaran Mendalam (Deep Learning) dari 
  
 Tolong pastikan ketiga prinsip ini (mindful, meaningful, joyful) tercermin secara nyata pada pertanyaan pemantik, pemahaman bermakna, dan rangkaian kegiatan pembelajaran (bukan hanya disebut sebagai label, tapi diwujudkan dalam bentuk aktivitas konkret).
  
-Tolong buatkan isian untuk form Modul Ajar saya, dengan bahasa yang sederhana, langsung pada intinya (to the point), dan tidak kompleks. Ikuti skema JSON yang sudah ditentukan. Untuk field berupa daftar/poin-poin, pisahkan tiap poin dengan karakter baris baru (bukan simbol bullet seperti - atau *, dan jangan pakai markdown seperti ** atau #).
+Tolong buatkan isian untuk form Modul Ajar saya, dengan detail menerapkan prinsip-prinsip tersebut. Ikuti skema JSON yang sudah ditentukan. Untuk field berupa daftar/poin-poin, pisahkan tiap poin dengan karakter baris baru (bukan simbol bullet seperti - atau *, dan jangan pakai markdown seperti ** atau #).
  
 Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: buat SATU rangkaian kegiatan generik yang berlaku sama untuk SEMUA pertemuan (tidak perlu dipecah per pertemuan), karena pola pembukaan dan penutupan kelas umumnya konsisten setiap sesi.
  
