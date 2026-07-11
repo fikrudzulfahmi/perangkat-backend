@@ -45,13 +45,32 @@ class AiAssistantController extends Controller
             ->map(fn($tp, $i) => ($i + 1) . ". {$tp}")
             ->implode("\n");
 
-        $promptText = <<<PROMPT
-Saya sedang membuat Modul Ajar SMK untuk materi: "{$request->bab_atau_materi}" (Pertemuan: {$pertemuan}, Waktu: {$waktu}).
 
+        $promptText = <<<PROMPT
+Saya sedang membuat Modul Ajar SMK dengan pendekatan Pembelajaran Mendalam (Deep Learning) untuk materi: "{$request->bab_atau_materi}" (Jumlah Pertemuan: {$pertemuan}, Waktu per Pertemuan: {$waktu}).
+ 
 Tujuan Pembelajarannya adalah:
 {$stringTp}
-
+ 
+Modul ajar ini menerapkan pendekatan Pembelajaran Mendalam (Deep Learning) dari Kemendikdasmen, yang berpijak pada 3 prinsip utama:
+1. Mindful Learning (berkesadaran) - siswa sadar dan reflektif terhadap apa dan mengapa mereka belajar.
+2. Meaningful Learning (bermakna) - materi dikaitkan dengan pengalaman nyata/relevansi kehidupan siswa, khususnya konteks kejuruan/dunia kerja.
+3. Joyful Learning (menggembirakan) - proses belajar dibuat menyenangkan, memotivasi, dan melibatkan siswa secara aktif.
+ 
+Tolong pastikan ketiga prinsip ini (mindful, meaningful, joyful) tercermin secara nyata pada pertanyaan pemantik, pemahaman bermakna, dan rangkaian kegiatan pembelajaran (bukan hanya disebut sebagai label, tapi diwujudkan dalam bentuk aktivitas konkret).
+ 
 Tolong buatkan isian untuk form Modul Ajar saya, dengan bahasa yang sederhana, langsung pada intinya (to the point), dan tidak kompleks. Ikuti skema JSON yang sudah ditentukan. Untuk field berupa daftar/poin-poin, pisahkan tiap poin dengan karakter baris baru (bukan simbol bullet seperti - atau *, dan jangan pakai markdown seperti ** atau #).
+ 
+Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: buat SATU rangkaian kegiatan generik yang berlaku sama untuk SEMUA pertemuan (tidak perlu dipecah per pertemuan), karena pola pembukaan dan penutupan kelas umumnya konsisten setiap sesi.
+ 
+Khusus untuk kegiatan_inti: WAJIB dipecah berdasarkan rentang pertemuan, karena materi/topik bisa berbeda di tiap pertemuan sesuai Tujuan Pembelajaran di atas. Kelompokkan Tujuan Pembelajaran ke dalam {$pertemuan} pertemuan secara proporsional dan logis (boleh 1 TP untuk beberapa pertemuan, atau beberapa TP digabung dalam 1 pertemuan, sesuai kompleksitas materi). Format tiap kelompok pertemuan diawali dengan judul singkat, contoh:
+ 
+Pertemuan 1-2: [nama sub-materi]
+- (poin kegiatan detail + estimasi waktu)
+Pertemuan 3: [nama sub-materi lain]
+- (poin kegiatan detail + estimasi waktu)
+ 
+Lanjutkan pola ini sampai seluruh {$pertemuan} pertemuan dan seluruh Tujuan Pembelajaran tercakup habis, tanpa ada TP yang terlewat.
 PROMPT;
 
         // Skema JSON supaya hasil dari Gemini terstruktur & langsung bisa
@@ -61,11 +80,11 @@ PROMPT;
             'properties' => [
                 'pertanyaan_pemantik' => [
                     'type' => 'STRING',
-                    'description' => '1-2 pertanyaan singkat pemancing nalar siswa',
+                    'description' => '1-2 pertanyaan singkat pemancing nalar siswa, dirancang agar bersifat mindful (mendorong siswa sadar akan tujuan belajarnya) dan meaningful (terkait konteks nyata/dunia kerja SMK)',
                 ],
                 'pemahaman_bermakna' => [
                     'type' => 'STRING',
-                    'description' => '1-2 kalimat singkat manfaat materi di dunia nyata',
+                    'description' => '1-5 kalimat singkat manfaat materi di dunia nyata/dunia kerja, mencerminkan prinsip meaningful learning',
                 ],
                 'sarana_prasarana' => [
                     'type' => 'STRING',
@@ -73,7 +92,7 @@ PROMPT;
                 ],
                 'lkpd' => [
                     'type' => 'STRING',
-                    'description' => 'Ide singkat tugas praktek/teori untuk siswa',
+                    'description' => 'Ide singkat tugas praktek/teori untuk siswa, sedapat mungkin dikemas agar joyful (menarik, interaktif) dan meaningful (relevan dunia kerja)',
                 ],
                 'glosarium_pustaka' => [
                     'type' => 'STRING',
@@ -81,15 +100,15 @@ PROMPT;
                 ],
                 'kegiatan_pendahuluan' => [
                     'type' => 'STRING',
-                    'description' => 'Poin-poin detail kegiatan Pendahuluan, satu poin per baris, sertakan estimasi alokasi waktu tiap poin',
+                    'description' => 'Poin-poin detail kegiatan Pendahuluan yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin. Sisipkan unsur mindful (misal refleksi singkat/menyampaikan tujuan) dan joyful (ice breaking/apersepsi menarik)',
                 ],
                 'kegiatan_inti' => [
                     'type' => 'STRING',
-                    'description' => 'Poin-poin SANGAT detail kegiatan Inti (bisa dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu',
+                    'description' => 'Kegiatan Inti WAJIB dikelompokkan per rentang pertemuan (misal "Pertemuan 1-2: [sub-materi]", lalu poin-poin di bawahnya, lanjut "Pertemuan 3: [sub-materi lain]", dst) sehingga seluruh Tujuan Pembelajaran terbagi habis ke seluruh jumlah pertemuan yang ada. Tiap poin kegiatan sangat detail, satu poin per baris, sertakan estimasi alokasi waktu, dan mencerminkan prinsip mindful, meaningful, joyful learning',
                 ],
                 'kegiatan_penutup' => [
                     'type' => 'STRING',
-                    'description' => 'Poin-poin detail kegiatan Penutup, satu poin per baris, sertakan estimasi alokasi waktu',
+                    'description' => 'Poin-poin detail kegiatan Penutup yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin. Sisipkan unsur refleksi (mindful) dan penguatan motivasi (joyful)',
                 ],
                 'rekomendasi_asesmen' => [
                     'type' => 'ARRAY',
