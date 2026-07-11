@@ -66,9 +66,9 @@ Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: buat SATU rangkaian kegi
 Khusus untuk kegiatan_inti: WAJIB dipecah berdasarkan rentang pertemuan, karena materi/topik bisa berbeda di tiap pertemuan sesuai Tujuan Pembelajaran di atas. Kelompokkan Tujuan Pembelajaran ke dalam {$pertemuan} pertemuan secara proporsional dan logis (boleh 1 TP untuk beberapa pertemuan, atau beberapa TP digabung dalam 1 pertemuan, sesuai kompleksitas materi). Format tiap kelompok pertemuan diawali dengan judul singkat, contoh:
  
 Pertemuan 1-2: [nama sub-materi]
-- (poin kegiatan detail + estimasi waktu)
+- (poin kegiatan detail dan deskripsinya + estimasi waktu)
 Pertemuan 3: [nama sub-materi lain]
-- (poin kegiatan detail + estimasi waktu)
+- (poin kegiatan detail dan deskripsinya + estimasi waktu)
  
 Lanjutkan pola ini sampai seluruh {$pertemuan} pertemuan dan seluruh Tujuan Pembelajaran tercakup habis, tanpa ada TP yang terlewat.
 PROMPT;
