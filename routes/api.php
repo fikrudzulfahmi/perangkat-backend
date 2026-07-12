@@ -91,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/guru/bank-soal/kloning-selektif', [BankSoalController::class, 'kloningSelektif']);
         Route::get('/guru/bank-soal/referensi-plotting', [BankSoalController::class, 'referensiPlotting']);
         Route::post('/guru/ai/generate-modul', [AiAssistantController::class, 'generateModul']);
+        Route::post('/guru/ai/preview-prompt', [AiAssistantController::class, 'previewPrompt']);
     });
 
     // 2. ADMIN ROUTES (Hanya bisa diakses oleh role 'admin')
