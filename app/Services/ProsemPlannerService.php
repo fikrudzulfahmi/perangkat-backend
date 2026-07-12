@@ -74,14 +74,14 @@ class ProsemPlannerService
             $mulai = $pertemuanCursor;
             $selesai = $pertemuanCursor + $jumlahPertemuan - 1;
 
-            // Sesuaikan nama kolom 'kode' dan 'deskripsi' dengan skema tabel TP Anda
+            // Nama kolom disesuaikan dengan skema tabel TP Anda: kode_tp & deskripsi
             $tujuanPembelajaran = TujuanPembelajaran::find($tp['tujuan_pembelajaran_id']);
 
             $rencana[] = [
                 'pertemuan_mulai' => $mulai,
                 'pertemuan_selesai' => $selesai,
-                'kode_tp' => $tujuanPembelajaran->kode ?? '-',
-                'deskripsi_tp' => $tujuanPembelajaran->deskripsi ?? '-',
+                'kode_tp' => $tujuanPembelajaran?->kode_tp ?? '-',
+                'deskripsi_tp' => $tujuanPembelajaran?->deskripsi ?? '-',
                 'total_jp' => $tp['total_jp'],
             ];
 
