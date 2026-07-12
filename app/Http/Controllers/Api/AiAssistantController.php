@@ -100,6 +100,13 @@ class AiAssistantController extends Controller
                 ], 502);
             }
 
+            // Gabungkan kegiatan_inti (array dari AI, tanpa kode TP) dengan data
+            // rencana pertemuan dari Prosem (kode TP pasti dari database), supaya
+            // kode TP yang tampil di hasil akhir tidak pernah salah/berubah.
+            if (isset($hasil['kegiatan_inti']) && is_array($hasil['kegiatan_inti'])) {
+                $hasil['kegiatan_inti'] = $this->mergeKegiatanInti($built['rencana'], $hasil['kegiatan_inti']);
+            }
+
             // Sisipkan info rencana pertemuan ke response, berguna untuk frontend
             // auto-isi field Pertemuan Ke- / Alokasi Waktu / durasi tiap tahap.
             $hasil['_meta'] = $meta;
@@ -198,45 +205,24 @@ Tolong buatkan isian untuk form Modul Ajar saya dengan detail yang cukup kaya da
 
 Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: buat SATU rangkaian kegiatan generik yang berlaku sama untuk SEMUA pertemuan (tidak perlu dipecah per pertemuan), karena pola pembukaan dan penutupan kelas umumnya konsisten setiap sesi. Tetap detail dan konkret, bukan poin klise seperti "guru membuka pelajaran dengan salam". Total estimasi waktu pada kegiatan_pendahuluan WAJIB berjumlah persis {$waktuPendahuluan} menit, dan kegiatan_penutup WAJIB berjumlah persis {$waktuPenutup} menit (jumlahkan seluruh poin di dalamnya sampai pas dengan angka ini, jangan kurang/lebih).
 
-Khusus untuk kegiatan_inti, ikuti struktur berlapis berikut:
+Khusus untuk kegiatan_inti, ikuti struktur berikut:
 
-LAPIS 1 - Pembagian pertemuan berikut SUDAH DITENTUKAN berdasarkan data Program Semester (Prosem) yang diisi guru, dan WAJIB diikuti PERSIS seperti apa adanya (DILARANG menambah, mengurangi, menggabungkan ulang, memecah ulang, atau mengubah rentang pertemuan maupun kode TP di bawah ini):
+Pembagian pertemuan berikut SUDAH DITENTUKAN berdasarkan data Program Semester (Prosem) yang diisi guru (DILARANG diubah, ditambah, dikurangi, digabung ulang, atau dipecah ulang):
 
 {$stringRencana}
 
-Tugas Anda pada LAPIS 1 ini HANYA menentukan nama sub-materi yang ringkas dan model pembelajaran yang relevan untuk tiap baris di atas (berdasarkan deskripsi TP yang diberikan), TANPA mengubah rentang pertemuan atau kode TP yang sudah ditentukan.
+kegiatan_inti WAJIB berupa ARRAY OBJEK dengan jumlah item dan URUTAN PERSIS SAMA seperti daftar baris di atas (item ke-1 sesuai baris ke-1, item ke-2 sesuai baris ke-2, dst). JANGAN menuliskan ulang kode TP, nomor pertemuan, atau nama pertemuan di dalam objek manapun — sistem akan menambahkannya secara otomatis berdasarkan urutan array. Tugas Anda pada TIAP OBJEK hanya:
+1. Tentukan nama_sub_materi yang ringkas berdasarkan deskripsi TP pada baris terkait.
+2. Tentukan model_pembelajaran yang relevan (Discovery Learning, Inquiry Learning, Problem/Project Based Learning, atau praktik kerja langsung, sesuai konteks kejuruan/SMK).
+3. Uraikan kegiatan pada 3 tahap Memahami - Mengaplikasi - Merefleksi (tahap_memahami, tahap_mengaplikasi, tahap_merefleksi). Setiap poin kegiatan di dalamnya WAJIB memuat 4 unsur dalam satu baris:
+   a) Nama kegiatan singkat
+   b) Deskripsi/elaborasi singkat 1 kalimat yang menjelaskan BAGAIMANA kegiatan itu dilaksanakan secara konkret (bukan cuma judul), sesuai konteks kejuruan/dunia kerja
+   c) Label prinsip BBM yang paling menonjol pada poin tersebut, ditulis dalam kurung: (Berkesadaran) / (Bermakna) / (Menggembirakan) - usahakan ketiga label BBM tersebar merata di seluruh poin dalam satu objek, tidak menumpuk hanya pada satu tahap saja
+   d) Estimasi alokasi waktu
 
-LAPIS 2 - Di dalam tiap kelompok pertemuan, uraikan kegiatan mengikuti 3 tahap Memahami - Mengaplikasi - Merefleksi. Setiap poin kegiatan WAJIB memuat 4 unsur berikut dalam satu baris:
-a) Nama kegiatan singkat
-b) Deskripsi/elaborasi singkat 1 kalimat yang menjelaskan BAGAIMANA kegiatan itu dilaksanakan secara konkret (bukan cuma judul), sesuai konteks kejuruan/dunia kerja
-c) Label prinsip BBM yang paling menonjol pada poin tersebut, ditulis dalam kurung: (Berkesadaran) / (Bermakna) / (Menggembirakan) - usahakan ketiga label BBM tersebar merata di seluruh poin kegiatan_inti, tidak menumpuk hanya pada satu tahap saja
-d) Estimasi alokasi waktu
+   Format tiap poin (baris baru sebagai pemisah antar poin, tanpa bullet/markdown): [Nama kegiatan] - [deskripsi pelaksanaan] ([Label BBM]) - [estimasi waktu]
 
-Format tiap poin: [Nama kegiatan] - [deskripsi pelaksanaan] ([Label BBM]) - [estimasi waktu]
-
-Setiap judul kelompok pertemuan WAJIB menggunakan persis rentang pertemuan dan kode TP yang sudah diberikan pada LAPIS 1 di atas (dari data Prosem), dengan format: "Pertemuan X-Y [Kode TP: ...]: [nama sub-materi] (Model: [nama model pembelajaran])".
-
-Format keluaran kegiatan_inti mengikuti pola berikut (gunakan baris baru antar poin, tanpa bullet/markdown):
-
-Pertemuan 1-2 [Kode TP: sebutkan kode TP terkait]: [nama sub-materi] (Model: [nama model pembelajaran yang dipakai])
-Tahap Memahami:
-[Nama kegiatan] - [deskripsi pelaksanaan] (Berkesadaran) - [estimasi waktu]
-[Nama kegiatan] - [deskripsi pelaksanaan] (Bermakna) - [estimasi waktu]
-Tahap Mengaplikasi:
-[Nama kegiatan] - [deskripsi pelaksanaan] (Menggembirakan) - [estimasi waktu]
-[Nama kegiatan] - [deskripsi pelaksanaan] (Bermakna) - [estimasi waktu]
-Tahap Merefleksi:
-[Nama kegiatan] - [deskripsi pelaksanaan] (Berkesadaran) - [estimasi waktu]
-
-Pertemuan 3 [Kode TP: sebutkan kode TP terkait]: [nama sub-materi lain] (Model: [nama model pembelajaran yang dipakai])
-Tahap Memahami:
-...
-Tahap Mengaplikasi:
-...
-Tahap Merefleksi:
-...
-
-Lanjutkan pola ini untuk seluruh {$pertemuan} pertemuan sesuai pembagian pada LAPIS 1. PENTING soal waktu: {$waktuInti} menit adalah alokasi waktu KHUSUS kegiatan_inti untuk SATU KALI pertemuan/sesi (di luar pendahuluan {$waktuPendahuluan} menit dan penutup {$waktuPenutup} menit yang sudah ditulis terpisah). Jika satu kelompok mencakup beberapa pertemuan (misal "Pertemuan 1-3"), maka pola kegiatan Memahami-Mengaplikasi-Merefleksi yang Anda tuliskan adalah pola yang terjadi PER SESI dan berulang/berkembang secara bertahap di tiap pertemuan pada rentang tersebut (bukan dibagi rata dari satu kelompok besar). Pastikan total estimasi waktu pada kegiatan di SETIAP SESI (Memahami+Mengaplikasi+Merefleksi) berjumlah persis {$waktuInti} menit, bukan dikalikan atau dibagi jumlah pertemuan dalam kelompok tersebut.
+PENTING soal waktu: {$waktuInti} menit adalah alokasi waktu KHUSUS kegiatan_inti untuk SATU KALI pertemuan/sesi (di luar pendahuluan {$waktuPendahuluan} menit dan penutup {$waktuPenutup} menit yang sudah ditulis terpisah). Jika satu baris mencakup beberapa pertemuan (misal rentang "4-6" berarti 3 pertemuan), maka pola kegiatan Memahami-Mengaplikasi-Merefleksi yang Anda tuliskan pada objek tersebut adalah pola yang terjadi PER SESI dan berulang/berkembang di tiap pertemuan pada rentang itu (bukan dibagi rata dari satu kelompok besar). Pastikan total estimasi waktu pada tahap_memahami+tahap_mengaplikasi+tahap_merefleksi di TIAP OBJEK berjumlah persis {$waktuInti} menit, bukan dikalikan atau dibagi jumlah pertemuan dalam baris tersebut.
 PROMPT;
 
         // Skema JSON supaya hasil dari Gemini terstruktur & langsung bisa
@@ -269,8 +255,34 @@ PROMPT;
                     'description' => 'Poin-poin detail kegiatan Pendahuluan yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin, dengan TOTAL seluruh poin harus persis sama dengan waktuPendahuluan yang diberikan. Sisipkan unsur Berkesadaran (misal refleksi singkat/menyampaikan tujuan) dan Menggembirakan (ice breaking/apersepsi menarik) sesuai prinsip BBM, hindari poin klise generik',
                 ],
                 'kegiatan_inti' => [
-                    'type' => 'STRING',
-                    'description' => 'Kegiatan Inti mengikuti PERSIS pembagian rentang pertemuan dan kode TP yang sudah ditentukan dari data Prosem (jangan diubah/digabung/dipecah ulang), judul tiap kelompok formatnya: "Pertemuan 1-2 [Kode TP: ...]: [sub-materi] (Model: [nama model])". Di dalam tiap kelompok pertemuan WAJIB diuraikan dalam 3 sub-tahap 3M: Tahap Memahami, Tahap Mengaplikasi, Tahap Merefleksi. Setiap poin kegiatan WAJIB berformat "[nama kegiatan] - [deskripsi singkat cara pelaksanaan] ([label BBM: Berkesadaran/Bermakna/Menggembirakan]) - [estimasi waktu]", dengan label BBM tersebar merata di seluruh poin (bukan menumpuk di satu tahap). Total estimasi waktu tiap SESI (bukan tiap kelompok rentang pertemuan) harus persis sama dengan waktuInti yang diberikan (di luar waktu pendahuluan dan penutup). Satu baris untuk tiap judul pertemuan/tahap/poin kegiatan (baris baru sebagai pemisah, tanpa bullet/markdown)',
+                    'type' => 'ARRAY',
+                    'description' => 'Array objek dengan jumlah & urutan PERSIS SAMA seperti daftar pembagian pertemuan yang diberikan di prompt (item ke-1 = baris ke-1, dst). JANGAN sertakan kode TP atau nomor pertemuan di dalam objek ini.',
+                    'items' => [
+                        'type' => 'OBJECT',
+                        'properties' => [
+                            'nama_sub_materi' => [
+                                'type' => 'STRING',
+                                'description' => 'Nama sub-materi ringkas untuk baris pertemuan ini, berdasarkan deskripsi TP terkait',
+                            ],
+                            'model_pembelajaran' => [
+                                'type' => 'STRING',
+                                'description' => 'Model pembelajaran yang relevan, contoh: Discovery Learning, Inquiry Learning, Problem Based Learning, Project Based Learning, atau praktik kerja langsung sesuai konteks SMK/vokasi',
+                            ],
+                            'tahap_memahami' => [
+                                'type' => 'STRING',
+                                'description' => 'Poin-poin kegiatan tahap Memahami (3M), satu poin per baris, format: "[nama kegiatan] - [deskripsi pelaksanaan] ([label BBM]) - [estimasi waktu]"',
+                            ],
+                            'tahap_mengaplikasi' => [
+                                'type' => 'STRING',
+                                'description' => 'Poin-poin kegiatan tahap Mengaplikasi (3M), satu poin per baris, format sama seperti tahap_memahami',
+                            ],
+                            'tahap_merefleksi' => [
+                                'type' => 'STRING',
+                                'description' => 'Poin-poin kegiatan tahap Merefleksi (3M), satu poin per baris, format sama seperti tahap_memahami',
+                            ],
+                        ],
+                        'required' => ['nama_sub_materi', 'model_pembelajaran', 'tahap_memahami', 'tahap_mengaplikasi', 'tahap_merefleksi'],
+                    ],
                 ],
                 'kegiatan_penutup' => [
                     'type' => 'STRING',
@@ -321,6 +333,41 @@ PROMPT;
             'promptText' => $promptText,
             'schema' => $schema,
             'meta' => $meta,
+            'rencana' => $hasilRencana['rencana'],
         ];
+    }
+
+    /**
+     * Gabungkan hasil array 'kegiatan_inti' dari AI (tanpa kode TP) dengan data
+     * rencana pertemuan dari Prosem (yang punya kode TP & rentang pertemuan pasti),
+     * dicocokkan berdasarkan URUTAN index array. Ini memastikan kode TP yang
+     * tampil di hasil akhir SELALU akurat, tidak tergantung AI menulis ulang benar/salah.
+     */
+    private function mergeKegiatanInti(array $rencana, array $itemsDariAi): string
+    {
+        $blocks = [];
+
+        foreach ($rencana as $index => $r) {
+            $item = $itemsDariAi[$index] ?? null;
+            if (!$item) {
+                // Guard: kalau AI kasih jumlah item lebih sedikit dari rencana,
+                // jangan sampai error, cukup lewati baris ini.
+                continue;
+            }
+
+            $label = $r['pertemuan_mulai'] === $r['pertemuan_selesai']
+                ? "Pertemuan {$r['pertemuan_mulai']}"
+                : "Pertemuan {$r['pertemuan_mulai']}-{$r['pertemuan_selesai']}";
+
+            $namaSubMateri = $item['nama_sub_materi'] ?? $r['deskripsi_tp'];
+            $model = $item['model_pembelajaran'] ?? '-';
+
+            $blocks[] = "{$label} [Kode TP: {$r['kode_tp']}]: {$namaSubMateri} (Model: {$model})\n"
+                . "Tahap Memahami:\n" . trim($item['tahap_memahami'] ?? '') . "\n"
+                . "Tahap Mengaplikasi:\n" . trim($item['tahap_mengaplikasi'] ?? '') . "\n"
+                . "Tahap Merefleksi:\n" . trim($item['tahap_merefleksi'] ?? '');
+        }
+
+        return implode("\n\n", $blocks);
     }
 }
