@@ -20,22 +20,18 @@ class ModulAjarController extends Controller
 
     public function index(Request $request)
     {
-        // 1. Jika request membawa parameter tahun_ajaran_id dan mapel_id 
-        //    (Berarti ini panggilan dari Pop-up Modal Clone)
         if ($request->has('tahun_ajaran_id') && $request->has('mapel_id')) {
             $mapelId = $request->query('mapel_id');
             $tahunAjaranId = $request->query('tahun_ajaran_id');
-            $guru_id = $request->query('guruId');
 
-            // Panggil metode getReferensiClone yang baru kita buat di Service
+            // UBAH BARIS INI: sesuaikan dengan nama parameter dari frontend (guru_id)
+            $guru_id = $request->query('guru_id');
+
             $modulReferensi = $this->modulAjarService->getReferensiClone($guru_id, $mapelId, $tahunAjaranId);
 
-            // Resource::collection otomatis membungkus data utuh ini ke dalam array "data", 
-            // sehingga sangat cocok dengan frontend Vue kita (response.data.data)
             return ModulAjarResource::collection($modulReferensi);
         }
 
-        // 2. Alur Normal (Berarti ini panggilan dari Tabel Utama yang butuh paginasi)
         $plottingId = $request->query('plotting_id');
         $modulAjars = $this->modulAjarService->getPaginasi($plottingId);
 
