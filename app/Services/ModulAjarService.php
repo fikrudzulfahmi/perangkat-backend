@@ -19,12 +19,13 @@ class ModulAjarService
         return $query->latest()->paginate($perPage);
     }
 
-    public function getReferensiClone($mapelId, $tahunAjaranId)
+    public function getReferensiClone($guru_id, $mapelId, $tahunAjaranId)
     {
         return ModulAjar::with(['tujuanPembelajarans'])
-            ->whereHas('plotting', function ($query) use ($mapelId, $tahunAjaranId) {
+            ->whereHas('plotting', function ($query) use ($guru_id, $mapelId, $tahunAjaranId) {
                 $query->where('mapel_id', $mapelId)
-                    ->where('tahun_pelajaran_id', $tahunAjaranId);
+                    ->where('tahun_pelajaran_id', $tahunAjaranId)
+                    ->where('guru_id', !$guru_id);
             })
             ->latest()
             ->get(); // Menggunakan get() tanpa paginasi agar muncul semua di dropdown modal
