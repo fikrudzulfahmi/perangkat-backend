@@ -16,7 +16,7 @@ class JadwalMengajarResource extends JsonResource
             'jam_ke' => $this->jam_ke,
             'tahun_pelajaran' => [
                 'id' => $this->tahun_pelajaran_id,
-                'nama' => $this->tahunPelajaran?->tahun_pelajaran ?? $this->tahunPelajaran?->nama, // antisipasi nama field tahun
+                'nama' => $this->tahunPelajaran?->tahun_pelajaran ?? $this->tahunPelajaran?->nama_tahun, // antisipasi nama field tahun
             ],
             'guru' => [
                 'id' => $this->guru_id,
