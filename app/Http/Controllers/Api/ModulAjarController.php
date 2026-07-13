@@ -25,9 +25,10 @@ class ModulAjarController extends Controller
         if ($request->has('tahun_ajaran_id') && $request->has('mapel_id')) {
             $mapelId = $request->query('mapel_id');
             $tahunAjaranId = $request->query('tahun_ajaran_id');
+            $guru_id = $request->query('guruId');
 
             // Panggil metode getReferensiClone yang baru kita buat di Service
-            $modulReferensi = $this->modulAjarService->getReferensiClone($mapelId, $tahunAjaranId);
+            $modulReferensi = $this->modulAjarService->getReferensiClone($guru_id, $mapelId, $tahunAjaranId);
 
             // Resource::collection otomatis membungkus data utuh ini ke dalam array "data", 
             // sehingga sangat cocok dengan frontend Vue kita (response.data.data)
