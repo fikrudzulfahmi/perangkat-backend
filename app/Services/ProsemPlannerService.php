@@ -16,6 +16,27 @@ class ProsemPlannerService
     private const PROPORSI_INTI = 0.70;
     private const PROPORSI_PENUTUP = 0.15;
 
+    // Bulan kalender (1-12) tempat TAHUN AJARAN dimulai. Standar Indonesia: Juli.
+    // PENTING: kolom 'bulan' di Prosem cuma angka bulan kalender MENTAH (1-12),
+    // tanpa info tahun/semester. Satu Plotting bisa mencakup SATU TAHUN AJARAN PENUH
+    // (Juli tahun X s/d Juni tahun X+1). Kalau diurutkan langsung sebagai angka biasa,
+    // Januari (1) akan dianggap lebih awal dari Juli (7) -- padahal Juli itu awal tahun
+    // ajaran dan Januari sudah masuk semester genap (lebih akhir). Sesuaikan angka ini
+    // kalau tahun ajaran di sekolah Anda mulai bulan lain.
+    private const BULAN_AWAL_TAHUN_AJARAN = 7;
+
+    /**
+     * Ubah nomor bulan kalender (1-12) jadi "urutan bulan dalam tahun ajaran",
+     * supaya bulan awal tahun ajaran selalu dianggap paling awal (urutan 0),
+     * lalu berputar (wrap-around) sampai urutan 11 di bulan sebelum tahun ajaran
+     * berikutnya dimulai. Contoh (awal=Juli): Juli=0, Agustus=1, ..., Desember=5,
+     * Januari=6, ..., Juni=11.
+     */
+    private function urutanBulanTahunAjaran(int $bulan): int
+    {
+        return ($bulan - self::BULAN_AWAL_TAHUN_AJARAN + 12) % 12;
+    }
+
     /**
      * Menyusun rencana pembagian pertemuan per TP + alokasi waktu per bagian kegiatan,
      * berdasarkan data Plotting (jp_per_minggu) dan Prosem (alokasi_jp per TP per minggu).
@@ -59,20 +80,28 @@ class ProsemPlannerService
             ->get()
             ->groupBy('tujuan_pembelajaran_id');
 
-        // 4. Susun urutan SEMUA TP di semester ini sesuai kemunculan pertamanya di Prosem, plus total JP tiap TP
+        // 4. Susun urutan SEMUA TP di tahun ajaran ini sesuai kemunculan pertamanya
+        //    di Prosem, plus total JP tiap TP.
+        //    PENTING: kemunculan pertama dicari dari BARIS ASLI (bukan ->min('bulan')
+        //    dan ->min('minggu_ke') dipisah) supaya kombinasi bulan+minggu yang dipakai
+        //    untuk urutan benar-benar pernah terjadi di data -- lalu bulan-nya dikonversi
+        //    dulu ke urutanBulanTahunAjaran() supaya Juli-Desember selalu dianggap lebih
+        //    awal dari Januari-Juni (lihat BULAN_AWAL_TAHUN_AJARAN di atas).
         $tpSequence = [];
         foreach ($rows as $tpId => $entries) {
+            $entriPalingAwal = $entries->sortBy(function ($entry) {
+                return $this->urutanBulanTahunAjaran((int) $entry->bulan) * 100 + (int) $entry->minggu_ke;
+            })->first();
+
             $tpSequence[] = [
                 'tujuan_pembelajaran_id' => $tpId,
                 'total_jp' => (int) $entries->sum('alokasi_jp'),
-                'first_bulan' => (int) $entries->min('bulan'),
-                'first_minggu' => (int) $entries->min('minggu_ke'),
+                'urutan_pertama' => $this->urutanBulanTahunAjaran((int) $entriPalingAwal->bulan) * 100
+                    + (int) $entriPalingAwal->minggu_ke,
             ];
         }
 
-        usort($tpSequence, function ($a, $b) {
-            return [$a['first_bulan'], $a['first_minggu']] <=> [$b['first_bulan'], $b['first_minggu']];
-        });
+        usort($tpSequence, fn($a, $b) => $a['urutan_pertama'] <=> $b['urutan_pertama']);
 
         // 5. Konversi total JP tiap TP -> jumlah pertemuan (pembulatan ke atas),
         //    lalu tentukan rentang pertemuan kumulatif untuk SEMUA TP di semester ini
