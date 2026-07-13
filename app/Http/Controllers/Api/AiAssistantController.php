@@ -169,6 +169,14 @@ class AiAssistantController extends Controller
 
         $stringRencana     = $this->planner->formatRencanaUntukPrompt($hasilRencana['rencana']);
         $pertemuan         = $hasilRencana['total_pertemuan'];
+        $pertemuanAwal     = $hasilRencana['pertemuan_awal'];
+        $pertemuanAkhir    = $hasilRencana['pertemuan_akhir'];
+        // Label rentang pertemuan ASLI untuk ditampilkan di field form, mis. "27-29"
+        // atau "9" kalau cuma 1 sesi -- JANGAN pakai "1-{$pertemuan}" di frontend,
+        // karena $pertemuan cuma jumlah sesi (count), bukan nomor pertemuan sebenarnya.
+        $pertemuanLabel    = $pertemuanAwal === $pertemuanAkhir
+            ? (string) $pertemuanAwal
+            : "{$pertemuanAwal}-{$pertemuanAkhir}";
         $jpPerPertemuan    = $hasilRencana['jp_per_pertemuan'];
         $waktuTotalPerSesi = $hasilRencana['total_menit_per_pertemuan'];
         $waktuPendahuluan  = $hasilRencana['menit_pendahuluan'];
@@ -321,7 +329,12 @@ PROMPT;
         ];
 
         $meta = [
-            'pertemuan' => $pertemuan,
+            'pertemuan' => $pertemuan, // jumlah SESI (count) modul ini, dipakai di teks prompt "Jumlah Pertemuan: N"
+            'pertemuan_awal' => $pertemuanAwal,
+            'pertemuan_akhir' => $pertemuanAkhir,
+            // Field yang dipakai untuk isi form "Pertemuan" di frontend, mis. "27-29".
+            // JANGAN dibentuk ulang di frontend sebagai "1-{pertemuan}" -- pakai field ini langsung.
+            'pertemuan_label' => $pertemuanLabel,
             'jp_per_pertemuan' => $jpPerPertemuan,
             'waktu_total_per_sesi_menit' => $waktuTotalPerSesi,
             'waktu_pendahuluan_menit' => $waktuPendahuluan,

@@ -148,9 +148,18 @@ class ProsemPlannerService
             0
         );
 
+        // pertemuan_awal/pertemuan_akhir = nomor pertemuan ASLI (posisi di kalender satu
+        // tahun ajaran) yang dicakup modul ajar ini, mis. 27 & 29 -- BUKAN 1 & total_pertemuan.
+        // $rencana sudah terurut kronologis (warisan urutan $rencanaSemua), jadi elemen
+        // pertama = nomor paling awal, elemen terakhir = nomor paling akhir.
+        $pertemuanAwal = empty($rencana) ? 0 : $rencana[0]['pertemuan_mulai'];
+        $pertemuanAkhir = empty($rencana) ? 0 : end($rencana)['pertemuan_selesai'];
+
         return [
             'rencana' => $rencana,
             'total_pertemuan' => $totalPertemuan,
+            'pertemuan_awal' => $pertemuanAwal,
+            'pertemuan_akhir' => $pertemuanAkhir,
             'jp_per_pertemuan' => $jpPerPertemuan,
             'total_menit_per_pertemuan' => $totalMenitPerPertemuan,
             'menit_pendahuluan' => $menitPendahuluan,
