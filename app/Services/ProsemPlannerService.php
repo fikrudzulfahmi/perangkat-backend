@@ -20,6 +20,14 @@ class ProsemPlannerService
      * Menyusun rencana pembagian pertemuan per TP + alokasi waktu per bagian kegiatan,
      * berdasarkan data Plotting (jp_per_minggu) dan Prosem (alokasi_jp per TP per minggu).
      *
+     * PENTING soal penomoran pertemuan: nomor pertemuan dihitung dari SELURUH TP
+     * dalam satu semester (satu $plottingId), berurutan sesuai kronologis Prosem
+     * (bulan lalu minggu_ke) -- bukan hanya dari $tujuanPembelajaranIds yang dikirim.
+     * Ini supaya saat guru membuat modul ajar baru untuk TP/elemen berikutnya dalam
+     * semester yang sama, penomoran pertemuan MELANJUTKAN dari modul ajar sebelumnya
+     * (mis. "Pertemuan 7-9"), bukan mulai dari 1 lagi. $tujuanPembelajaranIds hanya
+     * dipakai untuk MENYARING baris mana saja yang ditampilkan di hasil akhir.
+     *
      * @param string $plottingId
      * @param array  $tujuanPembelajaranIds Daftar ID TP yang termasuk dalam modul ajar ini
      */
@@ -39,15 +47,19 @@ class ProsemPlannerService
         // Sisa dialokasikan ke inti, biar totalnya pas (menghindari selisih pembulatan)
         $menitInti = $totalMenitPerPertemuan - $menitPendahuluan - $menitPenutup;
 
-        // 3. Ambil baris Prosem untuk TP-TP yang dipilih, urut kronologis (bulan lalu minggu)
+        // 3. Ambil baris Prosem SATU SEMESTER PENUH (semua TP di plotting ini),
+        //    urut kronologis (bulan lalu minggu).
+        //    PENTING: TIDAK difilter ke $tujuanPembelajaranIds di sini. Nomor
+        //    pertemuan harus dihitung dari posisi TP itu di keseluruhan semester,
+        //    supaya saat dibuat modul ajar baru untuk TP/elemen berikutnya,
+        //    penomoran pertemuan MELANJUTKAN yang sebelumnya, bukan mulai dari 1 lagi.
         $rows = Prosem::where('plotting_id', $plottingId)
-            ->whereIn('tujuan_pembelajaran_id', $tujuanPembelajaranIds)
             ->orderBy('bulan')
             ->orderBy('minggu_ke')
             ->get()
             ->groupBy('tujuan_pembelajaran_id');
 
-        // 4. Susun urutan TP sesuai kemunculan pertamanya di Prosem, plus total JP tiap TP
+        // 4. Susun urutan SEMUA TP di semester ini sesuai kemunculan pertamanya di Prosem, plus total JP tiap TP
         $tpSequence = [];
         foreach ($rows as $tpId => $entries) {
             $tpSequence[] = [
@@ -63,8 +75,9 @@ class ProsemPlannerService
         });
 
         // 5. Konversi total JP tiap TP -> jumlah pertemuan (pembulatan ke atas),
-        //    lalu tentukan rentang pertemuan kumulatif per TP
-        $rencana = [];
+        //    lalu tentukan rentang pertemuan kumulatif untuk SEMUA TP di semester ini
+        //    (bukan hanya TP yang dipilih). Ini "kalender pertemuan" penuh satu semester.
+        $rencanaSemua = [];
         $pertemuanCursor = 1;
 
         foreach ($tpSequence as $tp) {
@@ -77,7 +90,8 @@ class ProsemPlannerService
             // Nama kolom disesuaikan dengan skema tabel TP Anda: kode_tp & deskripsi
             $tujuanPembelajaran = TujuanPembelajaran::find($tp['tujuan_pembelajaran_id']);
 
-            $rencana[] = [
+            $rencanaSemua[] = [
+                'tujuan_pembelajaran_id' => $tp['tujuan_pembelajaran_id'],
                 'pertemuan_mulai' => $mulai,
                 'pertemuan_selesai' => $selesai,
                 'kode_tp' => $tujuanPembelajaran?->kode_tp ?? '-',
@@ -88,7 +102,22 @@ class ProsemPlannerService
             $pertemuanCursor = $selesai + 1;
         }
 
-        $totalPertemuan = empty($rencana) ? 0 : end($rencana)['pertemuan_selesai'];
+        // 6. Baru sekarang saring ke TP yang benar-benar dipilih untuk modul ajar ini.
+        //    Nomor pertemuan_mulai/selesai yang terbawa TETAP hasil hitungan di atas
+        //    (posisi asli TP tsb di kalender satu semester) -- TIDAK dihitung ulang dari 1.
+        $rencana = array_values(array_filter(
+            $rencanaSemua,
+            fn(array $r) => in_array($r['tujuan_pembelajaran_id'], $tujuanPembelajaranIds, true)
+        ));
+
+        // total_pertemuan di sini = jumlah SESI yang dicakup modul ajar ini saja
+        // (lebar tiap rentang dijumlahkan), BUKAN nomor pertemuan_selesai terakhir --
+        // karena sekarang nomornya bisa saja mulai bukan dari 1 (mis. Pertemuan 7-9).
+        $totalPertemuan = array_reduce(
+            $rencana,
+            fn(int $carry, array $r) => $carry + ($r['pertemuan_selesai'] - $r['pertemuan_mulai'] + 1),
+            0
+        );
 
         return [
             'rencana' => $rencana,
