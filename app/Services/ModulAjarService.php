@@ -25,7 +25,7 @@ class ModulAjarService
             ->whereHas('plotting', function ($query) use ($guru_id, $mapelId, $tahunAjaranId) {
                 $query->where('mapel_id', $mapelId)
                     ->where('tahun_pelajaran_id', $tahunAjaranId)
-                    ->where('guru_id', !$guru_id);
+                    ->where('guru_id', '!=', $guru_id);
             })
             ->latest()
             ->get(); // Menggunakan get() tanpa paginasi agar muncul semua di dropdown modal
