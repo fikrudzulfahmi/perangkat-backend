@@ -260,7 +260,27 @@ PROMPT;
                 ],
                 'sarana_prasarana' => [
                     'type' => 'STRING',
-                    'description' => 'Daftar singkat alat/bahan/media, satu item per baris',
+                    'description' => 'Daftar sarana prasarana yang dibutuhkan, satu per baris. Contoh: Laptop, Proyektor, Papan Tulis, Buku Paket, Peralatan praktik',
+                ],
+                'identifikasi_murid' => [
+                    'type' => 'STRING',
+                    'description' => 'Komponen A.1 Murid (Juknis KSP): deskripsi kesiapan peserta didik sebelum belajar — pengetahuan awal, minat, latar belakang, dan kebutuhan belajar, serta aspek lainnya (bisa dilakukan menggunakan asesmen awal). Konkret sesuai konteks materi & TP, satu poin per baris',
+                ],
+                'analisis_materi' => [
+                    'type' => 'STRING',
+                    'description' => 'Komponen A.2 Materi Pelajaran (Juknis KSP): analisis materi pelajaran — jenis pengetahuan yang akan dicapai, relevansi dengan kehidupan nyata murid, tingkat kesulitan, struktur materi, serta integrasi nilai dan karakter. Satu poin per baris',
+                ],
+                'kemitraan' => [
+                    'type' => 'STRING',
+                    'description' => 'Komponen B.6 Kemitraan Pembelajaran (Juknis KSP): mitra kerjasama untuk berkolaborasi dan berperan dalam pembelajaran — lingkungan sekolah, lingkungan luar sekolah, masyarakat, guru bidang studi lain, orang tua, komunitas, tokoh masyarakat, dunia usaha dan dunia industri (DU/DI), institusi, atau mitra profesional. Relevan dengan konteks SMK, satu poin per baris',
+                ],
+                'lingkungan_belajar' => [
+                    'type' => 'STRING',
+                    'description' => 'Komponen B.7 Lingkungan Pembelajaran (Juknis KSP): lingkungan pembelajaran yang mengintegrasikan ruang fisik, ruang virtual, dan budaya belajar untuk mendukung pembelajaran mendalam. Contoh: lingkungan sekolah, LMS (Learning Management System), dukungan guru. Satu poin per baris',
+                ],
+                'pemanfaatan_digital' => [
+                    'type' => 'STRING',
+                    'description' => 'Komponen B.8 Pemanfaatan Digital (Juknis KSP): pemanfaatan teknologi digital untuk menciptakan pembelajaran yang lebih interaktif, kolaboratif, dan kontekstual. Contoh: perpustakaan digital, forum diskusi daring, penilaian daring. Satu poin per baris',
                 ],
                 'lkpd' => [
                     'type' => 'STRING',
@@ -335,6 +355,11 @@ PROMPT;
                 'pertanyaan_pemantik',
                 'pemahaman_bermakna',
                 'sarana_prasarana',
+                'identifikasi_murid',
+                'analisis_materi',
+                'kemitraan',
+                'lingkungan_belajar',
+                'pemanfaatan_digital',
                 'lkpd',
                 'glosarium_pustaka',
                 'kegiatan_pendahuluan',

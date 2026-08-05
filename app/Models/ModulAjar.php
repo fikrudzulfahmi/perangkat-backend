@@ -36,7 +36,14 @@ class ModulAjar extends Model
         'asesmen_formatif',
         'asesmen_sumatif',
         'remedial_content',
-        'enrichment_content'
+        'enrichment_content',
+        // Kolom Sistematika RPM sesuai Juknis KSP 2025
+        'identifikasi_murid',
+        'analisis_materi',
+        'capaian_pembelajaran',
+        'kemitraan',
+        'lingkungan_belajar',
+        'pemanfaatan_digital'
     ];
 
     protected $casts = [

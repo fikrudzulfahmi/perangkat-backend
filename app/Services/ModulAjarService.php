@@ -3,10 +3,36 @@
 namespace App\Services;
 
 use App\Models\ModulAjar;
+use App\Models\CapaianPembelajaran;
 use Illuminate\Support\Facades\DB;
 
 class ModulAjarService
 {
+    /**
+     * Susun teks Capaian Pembelajaran otomatis dari CP induk TP yang dipilih
+     * (rantai KSP: TP -> CP). Format: "Elemen: deskripsi CP" per baris.
+     */
+    private function susunCapaianPembelajaran(array $tujuanPembelajaranIds): ?string
+    {
+        $ids = array_values(array_filter($tujuanPembelajaranIds));
+        if (empty($ids)) {
+            return null;
+        }
+
+        $cpList = CapaianPembelajaran::whereHas('listTp', function ($q) use ($ids) {
+            $q->whereIn('id', $ids);
+        })->get();
+
+        if ($cpList->isEmpty()) {
+            return null;
+        }
+
+        return $cpList
+            ->unique('id')
+            ->map(fn ($cp) => ($cp->elemen ? "{$cp->elemen}: " : '') . ($cp->deskripsi ?? ''))
+            ->implode("\n\n");
+    }
+
     public function getPaginasi($plottingId = null, $perPage = 10)
     {
         // HAPUS 'bankSoals' dari eager loading
@@ -35,8 +61,11 @@ class ModulAjarService
     {
         // Gunakan DB Transaction agar aman jika insert pivot gagal
         return DB::transaction(function () use ($data) {
-            // Data asesmen baru (asesmen_diagnostik, dll) akan otomatis tersimpan di sini
-            // karena sudah dimasukkan ke $fillable di Model ModulAjar
+            // Capaian Pembelajaran diisi OTOMATIS dari CP induk TP terpilih (Juknis KSP)
+            if (isset($data['tujuan_pembelajaran_ids'])) {
+                $data['capaian_pembelajaran'] = $this->susunCapaianPembelajaran($data['tujuan_pembelajaran_ids']);
+            }
+
             $modulAjar = ModulAjar::create($data);
 
             if (!empty($data['tujuan_pembelajaran_ids'])) {
@@ -53,7 +82,11 @@ class ModulAjarService
     public function update(ModulAjar $modulAjar, array $data)
     {
         return DB::transaction(function () use ($modulAjar, $data) {
-            // Data asesmen baru akan otomatis ter-update di baris ini
+            // Capaian Pembelajaran diisi OTOMATIS dari CP induk TP terpilih (Juknis KSP)
+            if (isset($data['tujuan_pembelajaran_ids'])) {
+                $data['capaian_pembelajaran'] = $this->susunCapaianPembelajaran($data['tujuan_pembelajaran_ids']);
+            }
+
             $modulAjar->update($data);
 
             // Sync akan otomatis menambah yang baru dan menghapus yang tidak ada di array

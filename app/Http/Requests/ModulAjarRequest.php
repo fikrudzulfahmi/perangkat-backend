@@ -24,7 +24,12 @@ class ModulAjarRequest extends FormRequest
             'profil_pancasila.*' => 'string', // Isi array-nya harus string
 
             'sarana_prasarana' => 'nullable|string',
-            'target_peserta' => 'required|string|max:100',
+            'identifikasi_murid' => 'nullable|string',
+            'analisis_materi' => 'nullable|string',
+            'capaian_pembelajaran' => 'nullable|string',
+            'kemitraan' => 'nullable|string',
+            'lingkungan_belajar' => 'nullable|string',
+            'pemanfaatan_digital' => 'nullable|string',
             'model_pembelajaran' => 'required|string|max:150',
             'pertanyaan_pemantik' => 'nullable|string',
             'pemahaman_bermakna' => 'nullable|string',
