@@ -8,9 +8,18 @@ use Illuminate\Support\Str;
 
 class GuruService
 {
-    public function getAllGuru()
+    public function getGuruPaginated($search = null, $perPage = 10)
     {
-        return User::where('role', 'guru')->get();
+        $query = User::role('guru');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('name', 'asc')->paginate($perPage);
     }
 
     public function storeGuru(array $data)

@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreGuruRequest;
+use App\Http\Requests\UpdateGuruRequest;
 use App\Http\Resources\GuruResource;
 use App\Services\GuruService;
-use App\Models\User;
 
 class GuruController extends Controller
 {
@@ -21,24 +21,11 @@ class GuruController extends Controller
 
     public function index(Request $request)
     {
-        // 1. Ambil keyword pencarian dari URL (?search=...)
         $search = $request->query('search');
+        $perPage = $request->query('per_page', 10);
+        
+        $dataGuru = $this->guruService->getGuruPaginated($search, $perPage);
 
-        $query = User::role('guru'); // Sesuaikan dengan filter role atau tabel Anda
-
-        // 2. Jika ada keyword, filter kolom nama atau email
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        // 3. Eksekusi paginasi (misal: 10 data per halaman)
-        // Laravel otomatis membaca parameter ?page=... dari frontend
-        $dataGuru = $query->orderBy('name', 'asc')->paginate(10);
-
-        // Kirim kembali dalam bentuk API Resource Collection
         return GuruResource::collection($dataGuru);
     }
 
@@ -54,16 +41,10 @@ class GuruController extends Controller
             ]);
     }
 
-    public function update(\Illuminate\Http\Request $request, $id)
+    public function update(UpdateGuruRequest $request, $id)
     {
-        // Validasi data yang masuk. Perhatikan pengecualian email unik untuk ID ini.
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'password' => 'nullable|string|min:8', // nullable: boleh kosong jika tidak ingin ganti password
-        ]);
-
-        $guru = $this->guruService->updateGuru($id, $validated);
+        // $request->validated() berisi data yang sudah tervalidasi
+        $guru = $this->guruService->updateGuru($id, $request->validated());
 
         return (new GuruResource($guru))->additional([
             'status' => 'success',
