@@ -20,6 +20,10 @@ class Atp extends Model
         'semester',
         'nomor_urut',
         'alokasi_jp',
+        // Format ATP sesuai KSP
+        'dpl',
+        'sumber_belajar',
+        'asesmen',
     ];
 
     // =======================================

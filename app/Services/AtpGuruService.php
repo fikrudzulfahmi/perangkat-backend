@@ -46,6 +46,10 @@ class AtpGuruService
                         'semester'   => $item['semester'],
                         'nomor_urut' => $item['nomor_urut'],
                         'alokasi_jp' => $item['alokasi_jp'],
+                        // Format ATP sesuai KSP
+                        'dpl'            => $item['dpl'] ?? null,
+                        'sumber_belajar' => $item['sumber_belajar'] ?? null,
+                        'asesmen'        => $item['asesmen'] ?? null,
                     ]
                 );
             }

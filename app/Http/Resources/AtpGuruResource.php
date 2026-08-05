@@ -23,6 +23,9 @@ class AtpGuruResource extends JsonResource
             'semester'               => $this->semester,
             'nomor_urut'             => $this->nomor_urut,
             'alokasi_jp'             => $this->alokasi_jp,
+            'dpl'                    => $this->dpl,
+            'sumber_belajar'         => $this->sumber_belajar,
+            'asesmen'                => $this->asesmen,
         ];
     }
 }

@@ -26,6 +26,10 @@ class SaveAtpRequest extends FormRequest
             'items.*.semester'               => 'required|in:1,2',
             'items.*.nomor_urut'             => 'required|integer|min:1',
             'items.*.alokasi_jp'             => 'required|integer|min:0',
+            // Format ATP sesuai KSP - opsional
+            'items.*.dpl'             => 'nullable|string|max:255',
+            'items.*.sumber_belajar'  => 'nullable|string',
+            'items.*.asesmen'         => 'nullable|string|max:255',
         ];
     }
 }
