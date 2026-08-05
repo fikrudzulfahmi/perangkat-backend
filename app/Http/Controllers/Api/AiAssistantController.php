@@ -110,6 +110,15 @@ class AiAssistantController extends Controller
                 $hasil['kegiatan_penutup'] ?? []
             );
 
+            // DPL & Asesmen mengikuti data yang SUDAH diisi guru di ATP (rantai KSP:
+            // CP -> Analisis CP -> TP -> ATP). Kalau TP terpilih belum punya ATP,
+            // array ini kosong dan frontend akan memakai rekomendasi AI.
+            [$dplRekomendasi, $asesmenRekomendasi] = $this->sinkronDplAsesmenDariAtp(
+                $validated['tujuan_pembelajaran_id'] ?? []
+            );
+            $hasil['dpl_rekomendasi'] = $dplRekomendasi;
+            $hasil['asesmen_rekomendasi'] = $asesmenRekomendasi;
+
             // Sisipkan info rencana pertemuan ke response, berguna untuk frontend
             // auto-isi field Pertemuan Ke- / Alokasi Waktu / durasi tiap tahap.
             $hasil['_meta'] = $meta;
@@ -356,6 +365,38 @@ PROMPT;
             'schema' => $schema,
             'meta' => $meta,
             'rencana' => $hasilRencana['rencana'],
+        ];
+    }
+
+    /**
+     * Ambil DPL (Dimensi Profil Lulusan) & Asesmen yang SUDAH diisi guru di tabel
+     * ATP untuk daftar TP terpilih (rantai KSP: CP -> Analisis CP -> TP -> ATP).
+     * Nilai dipecah koma, di-unique, dan dinormalisasi supaya pas dengan label
+     * dropdown DPL & checkbox asesmen di form modul ajar.
+     */
+    private function sinkronDplAsesmenDariAtp(array $tpIds): array
+    {
+        $tpIds = array_values(array_filter($tpIds));
+        if (empty($tpIds)) {
+            return [[], []];
+        }
+
+        $atpData = \App\Models\Atp::whereIn('tujuan_pembelajaran_id', $tpIds)
+            ->get(['dpl', 'asesmen']);
+
+        $kumpulkan = function ($values) {
+            return collect($values)
+                ->map(fn ($v) => array_map('trim', explode(',', (string) $v)))
+                ->flatten()
+                ->filter(fn ($v) => $v !== '' && $v !== null)
+                ->unique()
+                ->values()
+                ->all();
+        };
+
+        return [
+            $kumpulkan($atpData->pluck('dpl')->all()),
+            $kumpulkan($atpData->pluck('asesmen')->all()),
         ];
     }
 
