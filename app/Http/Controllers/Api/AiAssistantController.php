@@ -100,12 +100,15 @@ class AiAssistantController extends Controller
                 ], 502);
             }
 
-            // Gabungkan kegiatan_inti (array dari AI, tanpa kode TP) dengan data
-            // rencana pertemuan dari Prosem (kode TP pasti dari database), supaya
-            // kode TP yang tampil di hasil akhir tidak pernah salah/berubah.
-            if (isset($hasil['kegiatan_inti']) && is_array($hasil['kegiatan_inti'])) {
-                $hasil['kegiatan_inti'] = $this->mergeKegiatanInti($built['rencana'], $hasil['kegiatan_inti']);
-            }
+            // Gabungkan hasil AI menjadi struktur PER PERTEMUAN: pendahuluan + inti
+            // + penutup, dicocokkan dengan rencana pertemuan dari Prosem (label
+            // pertemuan & kode TP pasti dari database, bukan dari AI).
+            $hasil['kegiatan_per_pertemuan'] = $this->buildKegiatanPerPertemuan(
+                $built['rencana'],
+                $hasil['kegiatan_inti'] ?? [],
+                $hasil['kegiatan_pendahuluan'] ?? [],
+                $hasil['kegiatan_penutup'] ?? []
+            );
 
             // Sisipkan info rencana pertemuan ke response, berguna untuk frontend
             // auto-isi field Pertemuan Ke- / Alokasi Waktu / durasi tiap tahap.
@@ -211,7 +214,7 @@ Tolong pastikan prinsip BBM (Berkesadaran, Bermakna, Menggembirakan) DAN tahapan
 
 Tolong buatkan isian untuk form Modul Ajar saya dengan detail yang cukup kaya dan aplikatif (tidak sekadar poin generik), mengikuti skema JSON yang sudah ditentukan. Untuk field berupa daftar/poin-poin, pisahkan tiap poin dengan karakter baris baru (bukan simbol bullet seperti - atau *, dan jangan pakai markdown seperti ** atau #).
 
-Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: buat SATU rangkaian kegiatan generik yang berlaku sama untuk SEMUA pertemuan (tidak perlu dipecah per pertemuan), karena pola pembukaan dan penutupan kelas umumnya konsisten setiap sesi. Tetap detail dan konkret, bukan poin klise seperti "guru membuka pelajaran dengan salam". Total estimasi waktu pada kegiatan_pendahuluan WAJIB berjumlah persis {$waktuPendahuluan} menit, dan kegiatan_penutup WAJIB berjumlah persis {$waktuPenutup} menit (jumlahkan seluruh poin di dalamnya sampai pas dengan angka ini, jangan kurang/lebih).
+Khusus untuk kegiatan_pendahuluan dan kegiatan_penutup: keduanya WAJIB berupa ARRAY dengan jumlah item dan URUTAN PERSIS SAMA seperti kegiatan_inti (item ke-1 sesuai baris ke-1, item ke-2 sesuai baris ke-2, dst). Setiap item berisi rangkaian kegiatan untuk SATU pertemuan/rentang pertemuan yang bersangkutan — JANGAN membuat satu rangkaian generik yang berlaku untuk semua pertemuan. Jika satu baris mencakup rentang pertemuan (misal "4-6"), pola pendahuluan/penutup yang Anda tuliskan pada item itu berlaku PER SESI dan berulang di tiap pertemuan dalam rentang tersebut. JANGAN menuliskan ulang label/nomor pertemuan atau kode TP di dalam teks item — sistem akan menambahkannya otomatis berdasarkan urutan array. Total estimasi waktu pada TIAP item kegiatan_pendahuluan WAJIB berjumlah persis {$waktuPendahuluan} menit, dan TIAP item kegiatan_penutup WAJIB berjumlah persis {$waktuPenutup} menit (jumlahkan seluruh poin di dalamnya sampai pas dengan angka ini, jangan kurang/lebih).
 
 Khusus untuk kegiatan_inti, ikuti struktur berikut:
 
@@ -259,8 +262,11 @@ PROMPT;
                     'description' => '3-4 istilah kunci + definisi singkat, dan 1-2 referensi/buku umum, satu per baris',
                 ],
                 'kegiatan_pendahuluan' => [
-                    'type' => 'STRING',
-                    'description' => 'Poin-poin detail kegiatan Pendahuluan yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin, dengan TOTAL seluruh poin harus persis sama dengan waktuPendahuluan yang diberikan. Sisipkan unsur Berkesadaran (misal refleksi singkat/menyampaikan tujuan) dan Menggembirakan (ice breaking/apersepsi menarik) sesuai prinsip BBM, hindari poin klise generik',
+                    'type' => 'ARRAY',
+                    'description' => 'Array dengan jumlah & urutan PERSIS SAMA seperti kegiatan_inti (item ke-1 = baris rencana ke-1, dst). TIAP item = rangkaian kegiatan Pendahuluan untuk SATU pertemuan/rentang pertemuan (bukan generik untuk semua pertemuan). Satu poin per baris, sertakan estimasi alokasi waktu tiap poin, dengan TOTAL seluruh poin pada tiap item harus persis sama dengan waktuPendahuluan yang diberikan. Sisipkan unsur Berkesadaran (misal refleksi singkat/menyampaikan tujuan) dan Menggembirakan (ice breaking/apersepsi menarik) sesuai prinsip BBM, hindari poin klise generik. JANGAN tulis label/nomor pertemuan di dalam teks.',
+                    'items' => [
+                        'type' => 'STRING',
+                    ],
                 ],
                 'kegiatan_inti' => [
                     'type' => 'ARRAY',
@@ -293,8 +299,11 @@ PROMPT;
                     ],
                 ],
                 'kegiatan_penutup' => [
-                    'type' => 'STRING',
-                    'description' => 'Poin-poin detail kegiatan Penutup yang BERLAKU SAMA untuk semua pertemuan (tidak dipecah per pertemuan), satu poin per baris, sertakan estimasi alokasi waktu tiap poin, dengan TOTAL seluruh poin harus persis sama dengan waktuPenutup yang diberikan. Sisipkan unsur refleksi (Berkesadaran) dan penguatan motivasi (Menggembirakan) sesuai prinsip BBM, hindari poin klise generik',
+                    'type' => 'ARRAY',
+                    'description' => 'Array dengan jumlah & urutan PERSIS SAMA seperti kegiatan_inti (item ke-1 = baris rencana ke-1, dst). TIAP item = rangkaian kegiatan Penutup untuk SATU pertemuan/rentang pertemuan (bukan generik untuk semua pertemuan). Satu poin per baris, sertakan estimasi alokasi waktu tiap poin, dengan TOTAL seluruh poin pada tiap item harus persis sama dengan waktuPenutup yang diberikan. Sisipkan unsur refleksi (Berkesadaran) dan penguatan motivasi (Menggembirakan) sesuai prinsip BBM, hindari poin klise generik. JANGAN tulis label/nomor pertemuan di dalam teks.',
+                    'items' => [
+                        'type' => 'STRING',
+                    ],
                 ],
                 'rekomendasi_asesmen' => [
                     'type' => 'ARRAY',
@@ -351,17 +360,19 @@ PROMPT;
     }
 
     /**
-     * Gabungkan hasil array 'kegiatan_inti' dari AI (tanpa kode TP) dengan data
-     * rencana pertemuan dari Prosem (yang punya kode TP & rentang pertemuan pasti),
-     * dicocokkan berdasarkan URUTAN index array. Ini memastikan kode TP yang
-     * tampil di hasil akhir SELALU akurat, tidak tergantung AI menulis ulang benar/salah.
+     * Gabungkan hasil array dari AI (tanpa label pertemuan / kode TP) dengan data
+     * rencana pertemuan dari Prosem (yang punya label & kode TP pasti), dicocokkan
+     * berdasarkan URUTAN index array. Hasilnya array PER PERTEMUAN:
+     * [{ pertemuan_label, kode_tp, nama_sub_materi, model_pembelajaran,
+     *    pendahuluan, inti, penutup }] — siap dipetakan langsung ke form
+     * kegiatan pembelajaran modul ajar.
      */
-    private function mergeKegiatanInti(array $rencana, array $itemsDariAi): string
+    private function buildKegiatanPerPertemuan(array $rencana, array $itemsInti, array $itemsPendahuluan, array $itemsPenutup): array
     {
         $blocks = [];
 
         foreach ($rencana as $index => $r) {
-            $item = $itemsDariAi[$index] ?? null;
+            $item = $itemsInti[$index] ?? null;
             if (!$item) {
                 // Guard: kalau AI kasih jumlah item lebih sedikit dari rencana,
                 // jangan sampai error, cukup lewati baris ini.
@@ -372,15 +383,21 @@ PROMPT;
                 ? "Pertemuan {$r['pertemuan_mulai']}"
                 : "Pertemuan {$r['pertemuan_mulai']}-{$r['pertemuan_selesai']}";
 
-            $namaSubMateri = $item['nama_sub_materi'] ?? $r['deskripsi_tp'];
-            $model = $item['model_pembelajaran'] ?? '-';
-
-            $blocks[] = "{$label} [Kode TP: {$r['kode_tp']}]: {$namaSubMateri} (Model: {$model})\n"
-                . "Tahap Memahami:\n" . trim($item['tahap_memahami'] ?? '') . "\n"
-                . "Tahap Mengaplikasi:\n" . trim($item['tahap_mengaplikasi'] ?? '') . "\n"
-                . "Tahap Merefleksi:\n" . trim($item['tahap_merefleksi'] ?? '');
+            $blocks[] = [
+                'pertemuan_label' => $label,
+                'kode_tp' => $r['kode_tp'],
+                'nama_sub_materi' => $item['nama_sub_materi'] ?? $r['deskripsi_tp'],
+                'model_pembelajaran' => $item['model_pembelajaran'] ?? '-',
+                'pendahuluan' => trim($itemsPendahuluan[$index] ?? ''),
+                'inti' => trim(
+                    "Tahap Memahami:\n" . ($item['tahap_memahami'] ?? '')
+                    . "\n\nTahap Mengaplikasi:\n" . ($item['tahap_mengaplikasi'] ?? '')
+                    . "\n\nTahap Merefleksi:\n" . ($item['tahap_merefleksi'] ?? '')
+                ),
+                'penutup' => trim($itemsPenutup[$index] ?? ''),
+            ];
         }
 
-        return implode("\n\n", $blocks);
+        return $blocks;
     }
 }

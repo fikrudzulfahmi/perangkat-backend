@@ -29,11 +29,15 @@ class ModulAjarRequest extends FormRequest
             'pertanyaan_pemantik' => 'nullable|string',
             'pemahaman_bermakna' => 'nullable|string',
 
-            // Validasi format struktur Kegiatan Pembelajaran
+            // Validasi format struktur Kegiatan Pembelajaran (PER PERTEMUAN sesuai Juknis KSP)
             'kegiatan_pembelajaran' => 'required|array',
-            'kegiatan_pembelajaran.*.tahap' => 'required|string',
-            'kegiatan_pembelajaran.*.durasi' => 'required|string',
-            'kegiatan_pembelajaran.*.aktivitas' => 'required|string',
+            'kegiatan_pembelajaran.*.pertemuan' => 'required|string',
+            'kegiatan_pembelajaran.*.pendahuluan' => 'nullable|string',
+            'kegiatan_pembelajaran.*.inti' => 'nullable|string',
+            'kegiatan_pembelajaran.*.penutup' => 'nullable|string',
+            'kegiatan_pembelajaran.*.durasi_pendahuluan' => 'nullable|string',
+            'kegiatan_pembelajaran.*.durasi_inti' => 'nullable|string',
+            'kegiatan_pembelajaran.*.durasi_penutup' => 'nullable|string',
 
             'lkpd' => 'nullable|string',
             'glosarium_pustaka' => 'nullable|string',
