@@ -18,6 +18,10 @@ class CapaianPembelajaranRequest extends FormRequest
             'fase'      => 'required|string|max:2',
             'elemen'    => 'required|string|max:255',
             'deskripsi' => 'required|string',
+            // Hasil Analisis CP (KSP) - opsional
+            'kompetensi'          => 'nullable|string',
+            'konten_materi'       => 'nullable|string',
+            'bentuk_pemahaman'    => 'nullable|string',
         ];
     }
 }

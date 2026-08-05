@@ -19,7 +19,11 @@ class CapaianPembelajaran extends Model
         'mapel_id',
         'fase',
         'elemen',
-        'deskripsi'
+        'deskripsi',
+        // Hasil Analisis CP (KSP)
+        'kompetensi',
+        'konten_materi',
+        'bentuk_pemahaman'
     ];
 
     // Relasi ke Mata Pelajaran

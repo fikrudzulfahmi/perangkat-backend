@@ -15,6 +15,9 @@ class CapaianPembelajaranResource extends JsonResource
             'fase'       => $this->fase,
             'elemen'     => $this->elemen,
             'deskripsi'  => $this->deskripsi,
+            'kompetensi' => $this->kompetensi,
+            'konten_materi' => $this->konten_materi,
+            'bentuk_pemahaman' => $this->bentuk_pemahaman,
             'list_tp'    => TujuanPembelajaranResource::collection($this->whenLoaded('listTp')),
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
         ];
