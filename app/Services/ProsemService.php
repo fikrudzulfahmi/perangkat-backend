@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CapaianPembelajaran;
 use App\Models\Prosem;
+use App\Models\Atp;
 use App\Models\KalenderEfektif; // Pastikan Model KalenderEfektif di-import
 use Illuminate\Support\Facades\DB;
 
@@ -50,13 +51,76 @@ class ProsemService
         $savedProsem = Prosem::where('plotting_id', $plottingId)
             ->get();
 
+        // 5. Ambil data ATP (semester, nomor_urut, alokasi_jp) untuk plotting ini,
+        //    supaya halaman & cetak Prota/Prosem konsisten dengan urutan ATP.
+        $savedAtp = Atp::where('plotting_id', $plottingId)
+            ->get();
+
+        // 6. Ambil kalender efektif per bulan (minggu efektif, keterangan libur, dll)
+        //    untuk tahun pelajaran plotting ini. Dipakai:
+        //    - Menghitung RME & target JP PER SEMESTER (bisa berbeda, mis. 19 vs 18 minggu)
+        //    - Menampilkan kolom minggu dinamis di matriks Prosem (bulan yang
+        //      tidak efektif tidak menampilkan kolom minggu / tidak bisa diisi)
+        $bulanKeNomor = [
+            'Juli' => 7, 'Agustus' => 8, 'September' => 9, 'Oktober' => 10,
+            'November' => 11, 'Desember' => 12,
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6,
+        ];
+
+        $kalenderBulanan = [];
+        if ($tahunId) {
+            $rows = KalenderEfektif::where('tahun_pelajaran_id', $tahunId)
+                ->orderByRaw("FIELD(bulan, 'Juli','Agustus','September','Oktober','November','Desember','Januari','Februari','Maret','April','Mei','Juni')")
+                ->get();
+
+            foreach ($rows as $row) {
+                $kalenderBulanan[] = [
+                    'bulan' => $bulanKeNomor[$row->bulan] ?? null,
+                    'nama_bulan' => $row->bulan,
+                    'semester' => $row->semester,
+                    'minggu_efektif' => (int) $row->minggu_efektif,
+                    'minggu_tidak_efektif' => (int) $row->minggu_tidak_efektif,
+                    'keterangan' => $row->keterangan,
+                ];
+            }
+        }
+
+        // RME & target JP per semester (fallback: kalau kolom semester kosong,
+        // hitung dari bulan: 7-12 = Ganjil, 1-6 = Genap)
+        $rmeSemester1 = 0;
+        $rmeSemester2 = 0;
+        foreach ($kalenderBulanan as $kb) {
+            $isGanjil = in_array($kb['semester'], ['Ganjil', 'Semester 1', '1'])
+                || ($kb['bulan'] !== null && $kb['bulan'] >= 7 && $kb['bulan'] <= 12);
+            if ($isGanjil) {
+                $rmeSemester1 += $kb['minggu_efektif'];
+            } else {
+                $rmeSemester2 += $kb['minggu_efektif'];
+            }
+        }
+
+        // Fallback total RME jika kalender per bulan belum diisi (agar angka lama tetap jalan)
+        if ($rmeSemester1 + $rmeSemester2 === 0) {
+            $rmeSemester1 = (int) round($totalRme / 2);
+            $rmeSemester2 = $totalRme - $rmeSemester1;
+        }
+
         return [
             'meta_plotting' => $plotting,
             'total_rme' => $totalRme,
             'jp_per_minggu' => $jpPerMinggu,
             'total_jp_tahunan' => $totalJpTahunan,
+            // Target per semester (semester 1 bisa beda dengan semester 2)
+            'total_rme_semester_1' => $rmeSemester1,
+            'total_rme_semester_2' => $rmeSemester2,
+            'target_jp_semester_1' => $rmeSemester1 * $jpPerMinggu,
+            'target_jp_semester_2' => $rmeSemester2 * $jpPerMinggu,
+            // Kalender efektif per bulan untuk kolom minggu dinamis
+            'kalender_bulanan' => $kalenderBulanan,
             'list_cp' => $listCP,
-            'saved_prosem' => $savedProsem
+            'saved_prosem' => $savedProsem,
+            'saved_atp' => $savedAtp
         ];
     }
 
