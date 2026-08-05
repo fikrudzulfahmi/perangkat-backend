@@ -43,9 +43,20 @@ Route::middleware('auth:sanctum')->group(function () {
         // Route::get('/guru/plotting', [PlottingController::class, 'index']);
         Route::get('/guru/plotting', [PlottingController::class, 'myPlotting']);
         Route::get('/guru/capaian-pembelajaran', [CapaianPembelajaranController::class, 'getStructureForGuru']);
+        Route::post('/guru/capaian-pembelajaran', [CapaianPembelajaranController::class, 'store']);
+        Route::get('/guru/capaian-pembelajaran/{id}', [CapaianPembelajaranController::class, 'show']);
+        Route::put('/guru/capaian-pembelajaran/{id}', [CapaianPembelajaranController::class, 'update']);
+        Route::delete('/guru/capaian-pembelajaran/{id}', [CapaianPembelajaranController::class, 'destroy']);
+
+        // TP (Tujuan Pembelajaran) - CRUD milik guru sesuai mapel plotting
+        Route::post('/guru/tujuan-pembelajaran', [TujuanPembelajaranController::class, 'store']);
+        Route::put('/guru/tujuan-pembelajaran/{id}', [TujuanPembelajaranController::class, 'update']);
+        Route::delete('/guru/tujuan-pembelajaran/{id}', [TujuanPembelajaranController::class, 'destroy']);
+
         Route::get('/guru/atp', [AtpGuruController::class, 'getAtp']);
         Route::post('/guru/atp', [AtpGuruController::class, 'saveAtp']);
-        Route::get('/guru/mapel', [MataPelajaranController::class, 'index']);
+        // Daftar mapel khusus guru: HANYA mapel yang di-plotting ke guru yang login
+        Route::get('/guru/mapel', [MataPelajaranController::class, 'indexForGuru']);
         Route::get('/guru/kelas', [KelasController::class, 'index']);
         Route::get('/guru/rme/total-minggu', function (\Illuminate\Http\Request $request) {
             $tahunId = $request->query('tahun_pelajaran_id');
@@ -104,8 +115,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('siswa', SiswaController::class)->only(['index', 'store']);
         Route::post('siswa/bulk-delete', [SiswaController::class, 'bulkDelete']);
         Route::apiResource('kalender-efektif', KalenderEfektifController::class)->only(['index', 'store']);
-        Route::apiResource('capaian-pembelajaran', CapaianPembelajaranController::class);
-        Route::apiResource('tujuan-pembelajaran', TujuanPembelajaranController::class)->except(['index', 'show']);
+        // NOTE: CRUD Capaian Pembelajaran & Tujuan Pembelajaran sudah DIPINDAHKAN
+        // ke role guru (routes /guru/capaian-pembelajaran & /guru/tujuan-pembelajaran),
+        // karena setiap guru mengelola CP/TP sesuai mapel yang di-plotting kepadanya.
         Route::apiResource('dokumen-statis', DokumenStatisController::class)->only([
             'index',
             'store'

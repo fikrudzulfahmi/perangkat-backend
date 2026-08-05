@@ -3,9 +3,27 @@
 namespace App\Services;
 
 use App\Models\MataPelajaran;
+use App\Models\Plotting;
 
 class MataPelajaranService
 {
+    /**
+     * Ambil daftar mapel yang di-plotting ke seorang guru (tanpa paginasi,
+     * urut alfabetis). Dipakai dropdown "CP & TP" dan halaman-halaman guru.
+     */
+    public function ambilMapelGuru(string $guruId)
+    {
+        $mapelIds = Plotting::where('guru_id', $guruId)
+            ->whereHas('tahunPelajaran', fn ($q) => $q->where('is_active', 1))
+            ->pluck('mapel_id')
+            ->unique()
+            ->values();
+
+        return MataPelajaran::whereIn('id', $mapelIds)
+            ->orderBy('nama_mapel', 'asc')
+            ->get();
+    }
+
     public function ambilPaginasiDanCari($search, $perPage = 20)
     {
         $query = MataPelajaran::query();

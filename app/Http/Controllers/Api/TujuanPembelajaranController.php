@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\TujuanPembelajaran;
 use App\Http\Requests\TujuanPembelajaranRequest;
 use App\Http\Resources\TujuanPembelajaranResource;
@@ -19,18 +20,24 @@ class TujuanPembelajaranController extends Controller
 
     public function store(TujuanPembelajaranRequest $request)
     {
-        return new TujuanPembelajaranResource($this->tpService->buatBaru($request->validated()));
+        $tp = $this->tpService->buatBaruUntukGuru($request->user()->id, $request->validated());
+
+        return new TujuanPembelajaranResource($tp);
     }
 
     public function update(TujuanPembelajaranRequest $request, $id)
     {
         $tp = TujuanPembelajaran::findOrFail($id);
-        return new TujuanPembelajaranResource($this->tpService->perbaruiData($tp, $request->validated()));
+        $updated = $this->tpService->perbaruiDataUntukGuru($request->user()->id, $tp, $request->validated());
+
+        return new TujuanPembelajaranResource($updated);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $this->tpService->hapusData(TujuanPembelajaran::findOrFail($id));
+        $tp = TujuanPembelajaran::findOrFail($id);
+        $this->tpService->hapusDataUntukGuru($request->user()->id, $tp);
+
         return response()->json(['message' => 'Tujuan Pembelajaran berhasil dihapus.']);
     }
 }

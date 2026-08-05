@@ -11,51 +11,58 @@ use App\Services\CapaianPembelajaranService;
 
 class CapaianPembelajaranController extends Controller
 {
-    // 🟢 Cukup gunakan SATU properti service saja
     protected $cpService;
 
-    // 🟢 Hanya boleh ada SATU constructor
     public function __construct(CapaianPembelajaranService $cpService)
     {
         $this->cpService = $cpService;
     }
 
-    public function index(Request $request)
+    /**
+     * Struktur CP + TP untuk guru (dipakai halaman Kurikulum guru, ATP,
+     * Bank Soal, dan Cetak Perangkat). Guru hanya melihat CP dari mapel
+     * yang di-plotting kepadanya.
+     */
+    public function getStructureForGuru(Request $request)
     {
-        $data = $this->cpService->ambilPaginasiDanCari($request->query('search'), $request->query('mapel_id'));
-        return CapaianPembelajaranResource::collection($data);
+        $guruId  = $request->user()->id;
+        $mapelId = $request->query('mapel_id');
+
+        $capaian = $this->cpService->getStructureByMapelUntukGuru($guruId, $mapelId);
+
+        return CapaianPembelajaranResource::collection($capaian);
     }
 
     public function store(CapaianPembelajaranRequest $request)
     {
-        return new CapaianPembelajaranResource($this->cpService->buatBaru($request->validated()));
+        $cp = $this->cpService->buatBaruUntukGuru($request->user()->id, $request->validated());
+
+        return new CapaianPembelajaranResource($cp->load('mapel'));
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $cp = CapaianPembelajaran::with(['mapel', 'listTp'])->findOrFail($id);
+
+        // Pastikan CP ini berasal dari mapel milik guru yang login
+        $this->cpService->pastikanMapelMilikGuru($request->user()->id, $cp->mapel_id);
+
         return new CapaianPembelajaranResource($cp);
     }
 
     public function update(CapaianPembelajaranRequest $request, $id)
     {
         $cp = CapaianPembelajaran::findOrFail($id);
-        return new CapaianPembelajaranResource($this->cpService->perbaruiData($cp, $request->validated()));
+        $updated = $this->cpService->perbaruiDataUntukGuru($request->user()->id, $cp, $request->validated());
+
+        return new CapaianPembelajaranResource($updated->load('mapel'));
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $this->cpService->hapusData(CapaianPembelajaran::findOrFail($id));
+        $cp = CapaianPembelajaran::findOrFail($id);
+        $this->cpService->hapusDataUntukGuru($request->user()->id, $cp);
+
         return response()->json(['message' => 'Capaian Pembelajaran berhasil dihapus.']);
-    }
-
-    public function getStructureForGuru(Request $request)
-    {
-        $mapelId = $request->query('mapel_id');
-
-        // 🟢 PERBAIKAN: Ubah menjadi $this->cpService agar sama dengan method lainnya
-        $capaian = $this->cpService->getStructureByMapel($mapelId);
-
-        return CapaianPembelajaranResource::collection($capaian);
     }
 }

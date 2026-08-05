@@ -27,6 +27,17 @@ class MataPelajaranController extends Controller
         return MataPelajaranResource::collection($data);
     }
 
+    /**
+     * Daftar mapel milik guru yang login (berdasarkan plotting),
+     * untuk dropdown "CP & TP" dan kebutuhan guru lainnya.
+     */
+    public function indexForGuru(Request $request)
+    {
+        $data = $this->mapelService->ambilMapelGuru($request->user()->id);
+
+        return MataPelajaranResource::collection($data);
+    }
+
     public function store(MataPelajaranRequest $request)
     {
         $mapel = $this->mapelService->buatBaru($request->validated());
