@@ -41,7 +41,8 @@ class KktpService
                         'plotting_id' => $plottingId // 🟢 Simpan ke kolom plotting_id
                     ],
                     [
-                        'target_nilai' => $item['target_nilai']
+                        'target_nilai' => $item['target_nilai'],
+                        'kriteria' => $item['kriteria'] ?? null
                     ]
                 );
             }

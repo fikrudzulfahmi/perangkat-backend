@@ -18,6 +18,7 @@ class SaveKktpRequest extends FormRequest
             'items' => 'required|array',
             'items.*.tujuan_pembelajaran_id' => 'required|uuid|exists:tujuan_pembelajarans,id',
             'items.*.target_nilai' => 'required|integer|min:1|max:100',
+            'items.*.kriteria' => 'nullable|string', // Rumusan kriteria ketercapaian (format KSP)
         ];
     }
 }

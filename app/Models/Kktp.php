@@ -13,7 +13,8 @@ class Kktp extends Model
     protected $fillable = [
         'tujuan_pembelajaran_id',
         'plotting_id', // 🟢 Ubah dari kelas_id menjadi plotting_id
-        'target_nilai'
+        'target_nilai',
+        'kriteria' // Rumusan kriteria ketercapaian (format KSP)
     ];
 
     // Tambahkan relasi ke Plotting
