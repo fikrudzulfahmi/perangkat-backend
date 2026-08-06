@@ -98,58 +98,62 @@ class ProsemPlannerService
                 return (int) $r->minggu_ke <= (int) $k->minggu_efektif;
             })->values();
         }
-        $rows = $rows->groupBy('tujuan_pembelajaran_id');
-
-        // 4. Susun urutan SEMUA TP di tahun ajaran ini sesuai kemunculan pertamanya
-        //    di Prosem, plus jumlah minggu (pertemuan) tiap TP.
-        //    Kemunculan pertama dicari dari BARIS ASLI (bukan ->min('bulan')
-        //    dan ->min('minggu_ke') dipisah) supaya kombinasi bulan+minggu yang dipakai
-        //    untuk urutan benar-benar pernah terjadi di data -- lalu bulan-nya dikonversi
-        //    dulu ke urutanBulanTahunAjaran() supaya Juli-Desember selalu dianggap lebih
-        //    awal dari Januari-Juni (lihat BULAN_AWAL_TAHUN_AJARAN di atas).
-        $tpSequence = [];
-        foreach ($rows as $tpId => $entries) {
-            $entriPalingAwal = $entries->sortBy(function ($entry) {
-                return $this->urutanBulanTahunAjaran((int) $entry->bulan) * 100 + (int) $entry->minggu_ke;
-            })->first();
-
-            $tpSequence[] = [
-                'tujuan_pembelajaran_id' => $tpId,
-                'jumlah_minggu' => (int) $entries->count(), // SATU baris prosem = SATU pertemuan
-                'urutan_pertama' => $this->urutanBulanTahunAjaran((int) $entriPalingAwal->bulan) * 100
-                    + (int) $entriPalingAwal->minggu_ke,
-            ];
+        // 4. Kelompokkan baris efektif per MINGGU UNIK (bulan + minggu_ke).
+        //    Setiap minggu efektif = SATU PERTEMUAN dalam tahun ajaran, konsisten
+        //    dengan tampilan Prosem (satu kolom per minggu). Kalau satu minggu
+        //    berisi beberapa TP (mis. jadwal 2 sesi / 2 rombel), semua TP pada
+        //    minggu itu mendapat NOMOR PERTEMUAN YANG SAMA -- bukan dihitung
+        //    berurutan per baris (sebelumnya membuat posisi meleset, mis. 20-37
+        //    padahal guru melihat 10-18 di matriks Prosem).
+        $minggu = [];
+        foreach ($rows as $r) {
+            $kunci = (int) $r->bulan . '-' . (int) $r->minggu_ke;
+            if (!isset($minggu[$kunci])) {
+                $minggu[$kunci] = ['bulan' => (int) $r->bulan, 'minggu_ke' => (int) $r->minggu_ke, 'tp' => []];
+            }
+            $minggu[$kunci]['tp'][] = $r->tujuan_pembelajaran_id;
         }
 
-        usort($tpSequence, fn($a, $b) => $a['urutan_pertama'] <=> $b['urutan_pertama']);
+        // Urutkan minggu sesuai urutan tahun ajaran (Juli..Desember, lalu Januari..Juni)
+        uasort($minggu, fn($a, $b) =>
+            ($this->urutanBulanTahunAjaran($a['bulan']) * 10 + $a['minggu_ke'])
+            <=> ($this->urutanBulanTahunAjaran($b['bulan']) * 10 + $b['minggu_ke'])
+        );
 
-        // 5. Tentukan rentang pertemuan kumulatif untuk SEMUA TP di tahun ajaran ini
-        //    (bukan hanya TP yang dipilih) sebagai "kalender pertemuan" lengkap.
+        // Nomori pertemuan global per minggu, dan kumpulkan posisi per TP
+        $posisiTp = [];
+        $nomorPertemuan = 0;
+        foreach ($minggu as $m) {
+            $nomorPertemuan++;
+            foreach (array_unique($m['tp']) as $tid) {
+                $posisiTp[$tid][] = $nomorPertemuan;
+            }
+        }
+
+        // 5. Susun rencana SEMUA TP di tahun ajaran ini (urutan kemunculan pertama
+        //    di Prosem), dengan rentang pertemuan GLOBAL = posisi minggu efektif
+        //    tempat TP muncul.
+        $urutanPertama = [];
+        foreach ($posisiTp as $tid => $pos) {
+            $urutanPertama[$tid] = min($pos);
+        }
+        asort($urutanPertama);
+
         $rencanaSemua = [];
-        $pertemuanCursor = 1;
-
-        foreach ($tpSequence as $tp) {
-            // Jumlah pertemuan = jumlah minggu TP muncul di Prosem (bukan
-            // ceil(total_JP / JP per pertemuan), supaya persis sama dengan yang
-            // guru jadwalkan di matriks Prosem).
-            $jumlahPertemuan = max((int) $tp['jumlah_minggu'], 1);
-
-            $mulai = $pertemuanCursor;
-            $selesai = $pertemuanCursor + $jumlahPertemuan - 1;
-
-            // Nama kolom disesuaikan dengan skema tabel TP Anda: kode_tp & deskripsi
-            $tujuanPembelajaran = TujuanPembelajaran::find($tp['tujuan_pembelajaran_id']);
+        foreach ($urutanPertama as $tid => $pertama) {
+            $pos = $posisiTp[$tid];
+            $tujuanPembelajaran = TujuanPembelajaran::find($tid);
+            $barisTp = $rows->where('tujuan_pembelajaran_id', $tid);
 
             $rencanaSemua[] = [
-                'tujuan_pembelajaran_id' => $tp['tujuan_pembelajaran_id'],
-                'pertemuan_mulai' => $mulai,
-                'pertemuan_selesai' => $selesai,
+                'tujuan_pembelajaran_id' => $tid,
+                'pertemuan_mulai' => min($pos),
+                'pertemuan_selesai' => max($pos),
+                'jumlah_minggu' => count($pos),
                 'kode_tp' => $tujuanPembelajaran?->kode_tp ?? '-',
                 'deskripsi_tp' => $tujuanPembelajaran?->deskripsi ?? '-',
-                'total_jp' => (int) $rows[$tp['tujuan_pembelajaran_id']]->sum('alokasi_jp'),
+                'total_jp' => (int) $barisTp->sum('alokasi_jp'),
             ];
-
-            $pertemuanCursor = $selesai + 1;
         }
 
         // 6. Baru sekarang saring ke TP yang benar-benar dipilih untuk modul ajar ini,
@@ -179,7 +183,7 @@ class ProsemPlannerService
 
         $pertemuanCursor = 1;
         foreach ($rencana as &$r) {
-            $jumlah = $r['pertemuan_selesai'] - $r['pertemuan_mulai'] + 1;
+            $jumlah = (int) ($r['jumlah_minggu'] ?? ($r['pertemuan_selesai'] - $r['pertemuan_mulai'] + 1));
             $r['pertemuan_mulai'] = $pertemuanCursor;
             $r['pertemuan_selesai'] = $pertemuanCursor + $jumlah - 1;
             $pertemuanCursor = $r['pertemuan_selesai'] + 1;
