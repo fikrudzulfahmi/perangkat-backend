@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/guru/bank-soal/template', [BankSoalController::class, 'downloadTemplate']);
 
         Route::apiResource('/guru/modul-ajar', ModulAjarController::class);
+        Route::get('/guru/rencana-pertemuan', [ModulAjarController::class, 'rencanaPertemuan']);
         Route::get('/guru/dokumen-statis', [DokumenStatisController::class, 'index']);
         Route::get('/guru/kalender-efektif', [KalenderEfektifController::class, 'index']);
         Route::get('/guru/jadwal-mengajar', [JadwalMengajarController::class, 'index']);

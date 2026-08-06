@@ -183,12 +183,11 @@ class AiAssistantController extends Controller
         $pertemuan         = $hasilRencana['total_pertemuan'];
         $pertemuanAwal     = $hasilRencana['pertemuan_awal'];
         $pertemuanAkhir    = $hasilRencana['pertemuan_akhir'];
-        // Label rentang pertemuan ASLI untuk ditampilkan di field form, mis. "27-29"
-        // atau "9" kalau cuma 1 sesi -- JANGAN pakai "1-{$pertemuan}" di frontend,
-        // karena $pertemuan cuma jumlah sesi (count), bukan nomor pertemuan sebenarnya.
-        $pertemuanLabel    = $pertemuanAwal === $pertemuanAkhir
-            ? (string) $pertemuanAwal
-            : "{$pertemuanAwal}-{$pertemuanAkhir}";
+        // Label rentang pertemuan ASLI dari Prosem (posisi global dalam tahun
+        // ajaran, mis. "27-29" atau "9") untuk diisi ke field form "Pertemuan".
+        // JANGAN pakai "1-{$pertemuan}" di frontend, karena $pertemuan cuma
+        // jumlah sesi (count), bukan nomor pertemuan sebenarnya.
+        $pertemuanLabel    = $hasilRencana['pertemuan_label_global'] ?? '1';
         $jpPerPertemuan    = $hasilRencana['jp_per_pertemuan'];
         $waktuTotalPerSesi = $hasilRencana['total_menit_per_pertemuan'];
         $waktuPendahuluan  = $hasilRencana['menit_pendahuluan'];

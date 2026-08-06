@@ -141,6 +141,15 @@ class ProsemPlannerService
             fn(array $r) => in_array($r['tujuan_pembelajaran_id'], $tujuanPembelajaranIds, true)
         ));
 
+        // Simpan posisi GLOBAL di Prosem (nomor pertemuan sebenarnya dalam tahun
+        // ajaran) SEBELUM penomoran lokal menimpanya -- dipakai frontend untuk
+        // field "Pertemuan" yang menyesuaikan Prosem (mis. "12-20").
+        $pertemuanAwalGlobal = empty($rencana) ? 0 : $rencana[0]['pertemuan_mulai'];
+        $pertemuanAkhirGlobal = empty($rencana) ? 0 : end($rencana)['pertemuan_selesai'];
+        $pertemuanLabelGlobal = $pertemuanAwalGlobal === $pertemuanAkhirGlobal
+            ? (string) $pertemuanAwalGlobal
+            : "{$pertemuanAwalGlobal}-{$pertemuanAkhirGlobal}";
+
         $pertemuanCursor = 1;
         foreach ($rencana as &$r) {
             $jumlah = $r['pertemuan_selesai'] - $r['pertemuan_mulai'] + 1;
@@ -168,6 +177,10 @@ class ProsemPlannerService
             'total_pertemuan' => $totalPertemuan,
             'pertemuan_awal' => $pertemuanAwal,
             'pertemuan_akhir' => $pertemuanAkhir,
+            // Posisi global di Prosem (tahun ajaran penuh), untuk field "Pertemuan".
+            'pertemuan_awal_global' => $pertemuanAwalGlobal,
+            'pertemuan_akhir_global' => $pertemuanAkhirGlobal,
+            'pertemuan_label_global' => $pertemuanLabelGlobal,
             'jp_per_pertemuan' => $jpPerPertemuan,
             'total_menit_per_pertemuan' => $totalMenitPerPertemuan,
             'menit_pendahuluan' => $menitPendahuluan,

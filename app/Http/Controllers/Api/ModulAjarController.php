@@ -70,4 +70,39 @@ class ModulAjarController extends Controller
 
         return response()->json(['message' => 'Modul Ajar berhasil dihapus']);
     }
+
+    /**
+     * Rencana pertemuan dari Prosem untuk TP terpilih (posisi GLOBAL dalam
+     * tahun ajaran) -- dipakai frontend untuk auto-isi field "Pertemuan" saat
+     * guru mencentang TP, tanpa harus menunggu Generate AI.
+     */
+    public function rencanaPertemuan(Request $request)
+    {
+        $request->validate([
+            'plotting_id' => 'required|uuid|exists:plottings,id',
+            'tujuan_pembelajaran_id' => 'required|array|min:1',
+            'tujuan_pembelajaran_id.*' => 'required|uuid|exists:tujuan_pembelajarans,id',
+        ]);
+
+        $planner = app(\App\Services\ProsemPlannerService::class);
+        $hasil = $planner->buildRencanaPertemuan(
+            $request->plotting_id,
+            $request->tujuan_pembelajaran_id
+        );
+
+        if (empty($hasil['rencana'])) {
+            return response()->json([
+                'message' => 'Tidak ditemukan data Prosem untuk Tujuan Pembelajaran yang dipilih. Pastikan Prosem sudah diisi guru untuk TP ini.'
+            ], 422);
+        }
+
+        return response()->json([
+            'data' => $hasil['rencana'],
+            'total_pertemuan' => $hasil['total_pertemuan'],
+            'pertemuan_awal' => $hasil['pertemuan_awal_global'] ?? $hasil['pertemuan_awal'],
+            'pertemuan_akhir' => $hasil['pertemuan_akhir_global'] ?? $hasil['pertemuan_akhir'],
+            'pertemuan_label' => $hasil['pertemuan_label_global'] ?? '1',
+            'jp_per_pertemuan' => $hasil['jp_per_pertemuan'],
+        ]);
+    }
 }
