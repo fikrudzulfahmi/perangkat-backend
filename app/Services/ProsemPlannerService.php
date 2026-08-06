@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Plotting;
 use App\Models\Prosem;
 use App\Models\TujuanPembelajaran; // sesuaikan namespace model TP Anda
+use App\Models\KalenderEfektif;
 
 class ProsemPlannerService
 {
@@ -73,11 +74,31 @@ class ProsemPlannerService
         //    TIDAK difilter ke $tujuanPembelajaranIds di sini. Setiap BARIS prosem
         //    (bulan + minggu_ke) = SATU PERTEMUAN, jadi jumlah pertemuan per TP
         //    dihitung dari jumlah baris/minggu tempat TP itu dijadwalkan guru.
-        $rows = Prosem::where('plotting_id', $plottingId)
-            ->orderBy('bulan')
-            ->orderBy('minggu_ke')
+        //
+        //    PENTING: baris yang berada di minggu TIDAK EFEKTIF (libur/MPLS/ujian,
+        //    sesuai tabel kalender_efektifs) ikut DIBUANG, konsisten dengan tampilan
+        //    Prosem UI yang hanya menampilkan minggu efektif. Tanpa filter ini,
+        //    posisi & total pertemuan tidak cocok dengan yang guru lihat di Prosem.
+        $kalender = KalenderEfektif::where('tahun_pelajaran_id', $plotting->tahun_pelajaran_id)
             ->get()
-            ->groupBy('tujuan_pembelajaran_id');
+            ->keyBy('bulan'); // key = nama bulan ('Juli')
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        $rows = Prosem::where('plotting_id', $plottingId)->get();
+        if ($kalender->isNotEmpty()) {
+            $rows = $rows->filter(function ($r) use ($kalender, $namaBulan) {
+                $k = $kalender->get($namaBulan[(int) $r->bulan] ?? '');
+                if (!$k) {
+                    return true; // bulan tanpa entri kalender -> biarkan (data lama)
+                }
+                return (int) $r->minggu_ke <= (int) $k->minggu_efektif;
+            })->values();
+        }
+        $rows = $rows->groupBy('tujuan_pembelajaran_id');
 
         // 4. Susun urutan SEMUA TP di tahun ajaran ini sesuai kemunculan pertamanya
         //    di Prosem, plus jumlah minggu (pertemuan) tiap TP.
@@ -144,6 +165,12 @@ class ProsemPlannerService
         // Simpan posisi GLOBAL di Prosem (nomor pertemuan sebenarnya dalam tahun
         // ajaran) SEBELUM penomoran lokal menimpanya -- dipakai frontend untuk
         // field "Pertemuan" yang menyesuaikan Prosem (mis. "12-20").
+        foreach ($rencana as &$rEntry) {
+            $rEntry['pertemuan_mulai_global'] = $rEntry['pertemuan_mulai'];
+            $rEntry['pertemuan_selesai_global'] = $rEntry['pertemuan_selesai'];
+        }
+        unset($rEntry);
+
         $pertemuanAwalGlobal = empty($rencana) ? 0 : $rencana[0]['pertemuan_mulai'];
         $pertemuanAkhirGlobal = empty($rencana) ? 0 : end($rencana)['pertemuan_selesai'];
         $pertemuanLabelGlobal = $pertemuanAwalGlobal === $pertemuanAkhirGlobal

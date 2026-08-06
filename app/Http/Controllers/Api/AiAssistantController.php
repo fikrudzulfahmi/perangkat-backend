@@ -444,9 +444,14 @@ PROMPT;
                 continue;
             }
 
-            $label = $r['pertemuan_mulai'] === $r['pertemuan_selesai']
-                ? "Pertemuan {$r['pertemuan_mulai']}"
-                : "Pertemuan {$r['pertemuan_mulai']}-{$r['pertemuan_selesai']}";
+            // Label pertemuan memakai posisi GLOBAL di Prosem (mis. "Pertemuan
+            // 12-20"), supaya skenario kegiatan sesuai dengan yang guru lihat di
+            // Prosem -- bukan penomoran lokal yang mulai dari 1 lagi.
+            $mulaiGlobal = $r['pertemuan_mulai_global'] ?? $r['pertemuan_mulai'];
+            $selesaiGlobal = $r['pertemuan_selesai_global'] ?? $r['pertemuan_selesai'];
+            $label = $mulaiGlobal === $selesaiGlobal
+                ? "Pertemuan {$mulaiGlobal}"
+                : "Pertemuan {$mulaiGlobal}-{$selesaiGlobal}";
 
             $blocks[] = [
                 'pertemuan_label' => $label,
