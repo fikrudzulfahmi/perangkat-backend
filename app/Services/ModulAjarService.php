@@ -42,7 +42,8 @@ class ModulAjarService
             $query->where('plotting_id', $plottingId);
         }
 
-        return $query->latest()->paginate($perPage);
+        // Urutkan dari yang PALING LAMA (konsisten dengan urutan cetak modul ajar)
+        return $query->orderBy('created_at', 'asc')->paginate($perPage);
     }
 
     public function getReferensiClone($guru_id, $mapelId, $tahunAjaranId)
