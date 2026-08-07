@@ -150,6 +150,121 @@ class AiAssistantController extends Controller
         ]);
     }
 
+    // Analisis CP otomatis: uraikan deskripsi CP menjadi kompetensi,
+    // konten/materi, dan bentuk pemahaman (KSP) via AI -- dipakai tombol
+    // "Generate Analisis CP" di form CP (KurikulumGuruView).
+    public function analisisCp(Request $request)
+    {
+        $request->validate([
+            'elemen' => 'required|string|max:255',
+            'deskripsi' => 'required|string',
+        ]);
+
+        $apiKey = env('GEMINI_API_KEY');
+        if (!$apiKey) {
+            return response()->json([
+                'message' => 'GEMINI_API_KEY belum diatur di server (.env). Hubungi admin aplikasi.'
+            ], 500);
+        }
+
+        $schema = [
+            'type' => 'object',
+            'properties' => [
+                'kompetensi' => [
+                    'type' => 'array',
+                    'items' => ['type' => 'string'],
+                    'description' => 'Kompetensi/kemampuan yang dikembangkan, SATU butir per elemen array',
+                ],
+                'konten_materi' => [
+                    'type' => 'array',
+                    'items' => ['type' => 'string'],
+                    'description' => 'Konten/materi pokok yang dipelajari, SATU butir per elemen array',
+                ],
+                'bentuk_pemahaman' => [
+                    'type' => 'string',
+                    'description' => 'Kalimat ringkas yang menggambarkan pemahaman akhir peserta didik dari CP ini',
+                ],
+            ],
+            'required' => ['kompetensi', 'konten_materi', 'bentuk_pemahaman'],
+        ];
+
+        $promptText = <<<PROMPT
+Uraikan Capaian Pembelajaran (CP) berikut menjadi tiga komponen Analisis CP sesuai pendekatan KSP (Kurikulum Satuan Pendidikan / Kurikulum Deep Learning Kemendikdasmen):
+
+Elemen: {$request->elemen}
+Deskripsi CP: {$request->deskripsi}
+
+Aturan penguraian:
+1. kompetensi — kemampuan yang harus dikuasai peserta didik, berupa kata kerja operasional (mengidentifikasi, menganalisis, mengevaluasi, dst). Tulis 3-6 butir, SATU butir per elemen array, ringkas (maksimal ±15 kata per butir), jangan memakai format penomoran.
+2. konten_materi — materi pokok yang dipelajari untuk mencapai kompetensi tersebut. Tulis 3-6 butir, SATU butir per elemen array, ringkas.
+3. bentuk_pemahaman — SATU kalimat padat yang menggambarkan pemahaman utuh peserta didik setelah menguasai CP (bukan sekadar mengulang deskripsi CP).
+
+Jawab hanya JSON sesuai skema yang diberikan.
+PROMPT;
+
+        try {
+            $response = Http::timeout(60)->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={$apiKey}",
+                [
+                    'contents' => [
+                        ['role' => 'user', 'parts' => [['text' => $promptText]]],
+                    ],
+                    'generationConfig' => [
+                        'responseMimeType' => 'application/json',
+                        'responseSchema'   => $schema,
+                    ],
+                ]
+            );
+
+            if ($response->failed()) {
+                Log::error('Gemini analisis CP error: ' . $response->body());
+                $pesanGoogle = data_get($response->json(), 'error.message', $response->body());
+                return response()->json([
+                    'message' => 'Gagal menghubungi layanan AI: ' . $pesanGoogle
+                ], 502);
+            }
+
+            $rawText = data_get($response->json(), 'candidates.0.content.parts.0.text');
+            if (!$rawText) {
+                Log::error('Gemini analisis CP response tidak berisi teks: ' . $response->body());
+                return response()->json([
+                    'message' => 'Respons AI tidak berisi hasil analisis. Coba lagi.'
+                ], 502);
+            }
+
+            $parsed = json_decode($rawText, true);
+            if (!is_array($parsed)) {
+                // Kalau AI membungkus JSON dalam markdown/teks lain, coba ekstrak blok JSON
+                if (preg_match('/\{.*\}/s', $rawText, $m)) {
+                    $parsed = json_decode($m[0], true);
+                }
+            }
+            if (!is_array($parsed)) {
+                Log::error('Gemini analisis CP JSON tidak valid: ' . $rawText);
+                return response()->json([
+                    'message' => 'Hasil AI tidak dapat dipahami. Silakan coba lagi.'
+                ], 502);
+            }
+
+            $ambilBaris = fn($v) => is_array($v)
+                ? implode("\n", array_values(array_filter(array_map('trim', $v))))
+                : trim((string) $v);
+
+            return response()->json([
+                'data' => [
+                    'kompetensi' => $ambilBaris($parsed['kompetensi'] ?? ''),
+                    'konten_materi' => $ambilBaris($parsed['konten_materi'] ?? ''),
+                    'bentuk_pemahaman' => $ambilBaris($parsed['bentuk_pemahaman'] ?? ''),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Gemini analisis CP exception: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menghubungi layanan AI.'
+            ], 500);
+        }
+    }
+
     /**
      * Logika inti pembangunan prompt + schema, dipakai bareng oleh generateModul()
      * dan previewPrompt() supaya keduanya SELALU sinkron.
