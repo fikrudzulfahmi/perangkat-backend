@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/guru/bank-soal/referensi-plotting', [BankSoalController::class, 'referensiPlotting']);
         Route::post('/guru/ai/generate-modul', [AiAssistantController::class, 'generateModul']);
         Route::post('/guru/ai/analisis-cp', [AiAssistantController::class, 'analisisCp']);
+        Route::post('/guru/ai/generate-soal', [AiAssistantController::class, 'generateSoal']);
         Route::post('/guru/ai/preview-prompt', [AiAssistantController::class, 'previewPrompt']);
     });
 

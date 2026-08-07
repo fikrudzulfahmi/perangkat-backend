@@ -265,6 +265,166 @@ PROMPT;
         }
     }
 
+    // Generate soal bank soal via AI: buat sejumlah soal (pilihan ganda/essay,
+    // tingkat kesulitan tertentu) berdasarkan TP yang dipilih pada mapel.
+    // Output belum disimpan -- frontend menampilkan preview dulu lalu
+    // menyimpan lewat endpoint /guru/bank-soal biasa.
+    public function generateSoal(Request $request)
+    {
+        $request->validate([
+            'plotting_id' => 'required|uuid|exists:plottings,id',
+            'tp_ids' => 'required|array|min:1',
+            'tp_ids.*' => 'required|uuid|exists:tujuan_pembelajarans,id',
+            'jumlah' => 'required|integer|min:1|max:50',
+            'tipe_soal' => 'required|in:Pilihan Ganda,Essay,Keduanya',
+            'tingkat_kesulitan' => 'required|in:Mudah,Sedang,Sulit,Semua',
+        ]);
+
+        $apiKey = config('services.gemini.api_key');
+        if (!$apiKey) {
+            return response()->json([
+                'message' => 'GEMINI_API_KEY belum diatur di server (.env). Hubungi admin aplikasi.'
+            ], 500);
+        }
+
+        // Daftar TP bernomor (AI tidak kenal UUID, jadi pakai nomor urut
+        // lalu dipetakan kembali ke tp_id di sini)
+        $tps = TujuanPembelajaran::whereIn('id', $request->tp_ids)->get();
+        $daftarTp = $tps->values()->map(fn($tp, $i) => ($i + 1) . '. ' . ($tp->kode_tp ?: '-') . ': ' . ($tp->deskripsi ?: '-'))->implode("\n");
+
+        $schema = [
+            'type' => 'array',
+            'items' => [
+                'type' => 'object',
+                'properties' => [
+                    'tp_no' => ['type' => 'integer', 'description' => 'Nomor TP dari daftar yang diberikan (1..N)'],
+                    'tipe_soal' => ['type' => 'string', 'description' => 'Pilihan Ganda atau Essay'],
+                    'tingkat_kesulitan' => ['type' => 'string', 'description' => 'Mudah, Sedang, atau Sulit'],
+                    'pertanyaan' => ['type' => 'string', 'description' => 'Stem pertanyaan'],
+                    'pilihan_jawaban' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
+                        'description' => '5 opsi jawaban A-E (khusus Pilihan Ganda; kosongkan untuk Essay)',
+                    ],
+                    'kunci_jawaban' => ['type' => 'string', 'description' => 'PG: huruf A-E. Essay: teks kunci jawaban/rubrik singkat'],
+                    'pembahasan' => ['type' => 'string', 'description' => 'Pembahasan singkat jawaban'],
+                ],
+                'required' => ['tp_no', 'tipe_soal', 'tingkat_kesulitan', 'pertanyaan', 'kunci_jawaban'],
+            ],
+        ];
+
+        $jumlah = (int) $request->jumlah;
+        $tipe = $request->tipe_soal;
+        $kesulitan = $request->tingkat_kesulitan;
+        $ketentuanTipe = match ($tipe) {
+            'Pilihan Ganda' => "SEMUA soal berupa Pilihan Ganda (5 opsi A-E, kunci_jawaban huruf A-E).",
+            'Essay' => "SEMUA soal berupa Essay (pilihan_jawaban KOSONG, kunci_jawaban berisi teks kunci/rubrik).",
+            default => "Soal dibuat CAMPURAN Pilihan Ganda dan Essay (usahakan merata, misal separuh-separuh).",
+        };
+        $ketentuanKesulitan = match ($kesulitan) {
+            'Semua' => "Tingkat kesulitan bervariasi: sebagian Mudah, sebagian Sedang, sebagian Sulit (tercantum di tiap soal).",
+            default => "SEMUA soal bertingkat kesulitan {$kesulitan}.",
+        };
+
+        $promptText = <<<PROMPT
+Buatkan {$jumlah} soal evaluasi pembelajaran SMK (Bahasa Indonesia) berdasarkan Tujuan Pembelajaran (TP) berikut:
+
+DAFTAR TP:
+{$daftarTp}
+
+Ketentuan:
+- {$ketentuanTipe}
+- {$ketentuanKesulitan}
+- Setiap soal WAJIB menyebut tp_no yang sesuai dengan TP yang menjadi dasar soal (distribusikan merata ke semua TP yang dipilih).
+- Pertanyaan jelas, kontekstual kejuruan/SMK, tidak ambigu; hindari pertanyaan yang bisa dijawab tanpa belajar.
+- Pilihan Ganda: 5 opsi (A-E), hanya satu kunci yang benar, pengecoh (distractor) masuk akal; kunci_jawaban berupa HURUF (A/B/C/D/E).
+- Essay: pertanyaan menuntut penalaran/penerapan; kunci_jawaban berupa teks kunci jawaban/rubrik singkat (2-4 poin).
+- pembahasan singkat (1-2 kalimat) untuk tiap soal.
+- Jawab hanya JSON array sesuai skema.
+PROMPT;
+
+        try {
+            $response = Http::timeout(90)->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={$apiKey}",
+                [
+                    'contents' => [
+                        ['role' => 'user', 'parts' => [['text' => $promptText]]],
+                    ],
+                    'generationConfig' => [
+                        'responseMimeType' => 'application/json',
+                        'responseSchema'   => $schema,
+                    ],
+                ]
+            );
+
+            if ($response->failed()) {
+                Log::error('Gemini generate soal error: ' . $response->body());
+                $pesanGoogle = data_get($response->json(), 'error.message', $response->body());
+                return response()->json([
+                    'message' => 'Gagal menghubungi layanan AI: ' . $pesanGoogle
+                ], 502);
+            }
+
+            $rawText = data_get($response->json(), 'candidates.0.content.parts.0.text');
+            if (!$rawText) {
+                Log::error('Gemini generate soal response tidak berisi teks: ' . $response->body());
+                return response()->json(['message' => 'Respons AI tidak berisi soal. Coba lagi.'], 502);
+            }
+
+            $parsed = json_decode($rawText, true);
+            if (!is_array($parsed)) {
+                if (preg_match('/\[.*\]/s', $rawText, $m)) {
+                    $parsed = json_decode($m[0], true);
+                }
+            }
+            if (!is_array($parsed)) {
+                Log::error('Gemini generate soal JSON tidak valid: ' . $rawText);
+                return response()->json(['message' => 'Hasil AI tidak dapat dipahami. Silakan coba lagi.'], 502);
+            }
+
+            $tpById = $tps->keyBy('id');
+            $tpNoToId = $tps->values()->map(fn($tp, $i) => [$i + 1 => $tp->id])->collapse()->all();
+
+            $soal = [];
+            foreach ($parsed as $item) {
+                if (!is_array($item) || empty($item['pertanyaan'])) {
+                    continue;
+                }
+                $tpId = $tpNoToId[(int) ($item['tp_no'] ?? 0)] ?? $request->tp_ids[0];
+                $tipeItem = in_array($item['tipe_soal'] ?? '', ['Pilihan Ganda', 'Essay'], true)
+                    ? $item['tipe_soal'] : 'Pilihan Ganda';
+                $kesulitanItem = in_array($item['tingkat_kesulitan'] ?? '', ['Mudah', 'Sedang', 'Sulit'], true)
+                    ? $item['tingkat_kesulitan'] : 'Sedang';
+                $opsi = array_values(array_filter(array_map('trim', $item['pilihan_jawaban'] ?? [])));
+                if ($tipeItem === 'Pilihan Ganda' && count($opsi) < 2) {
+                    continue; // PG tanpa opsi = hasil buruk, buang
+                }
+
+                $soal[] = [
+                    'tp_id' => $tpId,
+                    'kode_tp' => optional($tpById->get($tpId))->kode_tp,
+                    'tipe_soal' => $tipeItem,
+                    'tingkat_kesulitan' => $kesulitanItem,
+                    'pertanyaan' => trim($item['pertanyaan']),
+                    'pilihan_jawaban' => $tipeItem === 'Pilihan Ganda' ? $opsi : [],
+                    'kunci_jawaban' => trim((string) ($item['kunci_jawaban'] ?? '')),
+                    'pembahasan' => trim((string) ($item['pembahasan'] ?? '')),
+                ];
+            }
+
+            if (count($soal) === 0) {
+                return response()->json(['message' => 'AI tidak menghasilkan soal yang valid. Coba lagi.'], 502);
+            }
+
+            return response()->json(['data' => $soal]);
+        } catch (\Exception $e) {
+            Log::error('Gemini generate soal exception: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menghubungi layanan AI.'
+            ], 500);
+        }
+    }
+
     /**
      * Logika inti pembangunan prompt + schema, dipakai bareng oleh generateModul()
      * dan previewPrompt() supaya keduanya SELALU sinkron.
