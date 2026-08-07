@@ -44,7 +44,7 @@ class AiAssistantController extends Controller
      */
     public function generateModul(Request $request)
     {
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.api_key');
         if (!$apiKey) {
             return response()->json([
                 'message' => 'GEMINI_API_KEY belum diatur di server (.env). Hubungi admin aplikasi.'
@@ -160,7 +160,7 @@ class AiAssistantController extends Controller
             'deskripsi' => 'required|string',
         ]);
 
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.api_key');
         if (!$apiKey) {
             return response()->json([
                 'message' => 'GEMINI_API_KEY belum diatur di server (.env). Hubungi admin aplikasi.'

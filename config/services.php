@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'gemini' => [
+        // Dipakai AiAssistantController. Key dibaca via config() (bukan env()
+        // langsung) supaya tetap berfungsi saat server memakai config:cache.
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
 ];
