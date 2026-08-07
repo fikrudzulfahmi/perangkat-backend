@@ -276,7 +276,7 @@ PROMPT;
             'tp_ids' => 'required|array|min:1',
             'tp_ids.*' => 'required|uuid|exists:tujuan_pembelajarans,id',
             'jumlah' => 'required|integer|min:1|max:50',
-            'tipe_soal' => 'required|in:Pilihan Ganda,Essay,Keduanya',
+            'tipe_soal' => 'required|in:Pilihan Ganda,Esai,Keduanya',
             'tingkat_kesulitan' => 'required|in:Mudah,Sedang,Sulit,Semua',
         ]);
 
@@ -298,15 +298,15 @@ PROMPT;
                 'type' => 'object',
                 'properties' => [
                     'tp_no' => ['type' => 'integer', 'description' => 'Nomor TP dari daftar yang diberikan (1..N)'],
-                    'tipe_soal' => ['type' => 'string', 'description' => 'Pilihan Ganda atau Essay'],
+                    'tipe_soal' => ['type' => 'string', 'description' => 'Pilihan Ganda atau Esai'],
                     'tingkat_kesulitan' => ['type' => 'string', 'description' => 'Mudah, Sedang, atau Sulit'],
                     'pertanyaan' => ['type' => 'string', 'description' => 'Stem pertanyaan'],
                     'pilihan_jawaban' => [
                         'type' => 'array',
                         'items' => ['type' => 'string'],
-                        'description' => '5 opsi jawaban A-E (khusus Pilihan Ganda; kosongkan untuk Essay)',
+                        'description' => '5 opsi jawaban A-E (khusus Pilihan Ganda; kosongkan untuk Esai)',
                     ],
-                    'kunci_jawaban' => ['type' => 'string', 'description' => 'PG: huruf A-E. Essay: teks kunci jawaban/rubrik singkat'],
+                    'kunci_jawaban' => ['type' => 'string', 'description' => 'PG: huruf A-E. Esai: teks kunci jawaban/rubrik singkat'],
                     'pembahasan' => ['type' => 'string', 'description' => 'Pembahasan singkat jawaban'],
                 ],
                 'required' => ['tp_no', 'tipe_soal', 'tingkat_kesulitan', 'pertanyaan', 'kunci_jawaban'],
@@ -318,8 +318,8 @@ PROMPT;
         $kesulitan = $request->tingkat_kesulitan;
         $ketentuanTipe = match ($tipe) {
             'Pilihan Ganda' => "SEMUA soal berupa Pilihan Ganda (5 opsi A-E, kunci_jawaban huruf A-E).",
-            'Essay' => "SEMUA soal berupa Essay (pilihan_jawaban KOSONG, kunci_jawaban berisi teks kunci/rubrik).",
-            default => "Soal dibuat CAMPURAN Pilihan Ganda dan Essay (usahakan merata, misal separuh-separuh).",
+            'Esai' => "SEMUA soal berupa Esai (pilihan_jawaban KOSONG, kunci_jawaban berisi teks kunci/rubrik).",
+            default => "Soal dibuat CAMPURAN Pilihan Ganda dan Esai (usahakan merata, misal separuh-separuh).",
         };
         $ketentuanKesulitan = match ($kesulitan) {
             'Semua' => "Tingkat kesulitan bervariasi: sebagian Mudah, sebagian Sedang, sebagian Sulit (tercantum di tiap soal).",
@@ -338,7 +338,7 @@ Ketentuan:
 - Setiap soal WAJIB menyebut tp_no yang sesuai dengan TP yang menjadi dasar soal (distribusikan merata ke semua TP yang dipilih).
 - Pertanyaan jelas, kontekstual kejuruan/SMK, tidak ambigu; hindari pertanyaan yang bisa dijawab tanpa belajar.
 - Pilihan Ganda: 5 opsi (A-E), hanya satu kunci yang benar, pengecoh (distractor) masuk akal; kunci_jawaban berupa HURUF (A/B/C/D/E).
-- Essay: pertanyaan menuntut penalaran/penerapan; kunci_jawaban berupa teks kunci jawaban/rubrik singkat (2-4 poin).
+- Esai: pertanyaan menuntut penalaran/penerapan; kunci_jawaban berupa teks kunci jawaban/rubrik singkat (2-4 poin).
 - pembahasan singkat (1-2 kalimat) untuk tiap soal.
 - Jawab hanya JSON array sesuai skema.
 PROMPT;
@@ -391,7 +391,7 @@ PROMPT;
                     continue;
                 }
                 $tpId = $tpNoToId[(int) ($item['tp_no'] ?? 0)] ?? $request->tp_ids[0];
-                $tipeItem = in_array($item['tipe_soal'] ?? '', ['Pilihan Ganda', 'Essay'], true)
+                $tipeItem = in_array($item['tipe_soal'] ?? '', ['Pilihan Ganda', 'Esai'], true)
                     ? $item['tipe_soal'] : 'Pilihan Ganda';
                 $kesulitanItem = in_array($item['tingkat_kesulitan'] ?? '', ['Mudah', 'Sedang', 'Sulit'], true)
                     ? $item['tingkat_kesulitan'] : 'Sedang';
